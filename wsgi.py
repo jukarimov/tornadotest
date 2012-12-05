@@ -26,9 +26,9 @@ class Edit(RequestHandler):
 
 class APINotes(RequestHandler):
   def get(self):
-    conn = connect('user=pguser host=localhost dbname=pgdb')
+    conn = connect("user='pguser' host='localhost' dbname='pgdb' password='pgpass'")
     cursor = conn.cursor(cursor_factory=RealDictCursor)
-    cursor.execute('SELECT * FROM public.books')
+    cursor.execute('SELECT * FROM books')
     records = cursor.fetchall()
     self.write({
       'total':len(records),
@@ -36,17 +36,17 @@ class APINotes(RequestHandler):
     })
 
   def post(self):
-    conn = connect('user=pguser host=localhost dbname=pgdb')
-    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    conn = connect("user='pguser' host='localhost' dbname='pgdb' password='pgpass'")
+    cursor = conn.cursor()
 
     data = self.get_argument('data')
     print 'post:', data
     for row in eval(data):
-       print "SQL: INSERT INTO books VALUES ('%s','%s','%s');" % \
-		       (row['id'], row['name'], row['author'])
-       cursor.execute("INSERT INTO books VALUES ('%s','%s','%s');" % \
+       cursor.execute("""INSERT INTO books(id,name,author) VALUES('%s','%s','%s')""" % \
 		       (row['id'], row['name'], row['author'])
        )
+    conn.commit()
+    conn.close()
 
   def put(self):
     print 'put'

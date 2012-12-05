@@ -78,8 +78,9 @@
     <div>Click the row to start editing.</div>
   </div>
   
-  <table id="tt" style="width:700px;height:auto"
-      data-options="iconCls:'icon-edit',url:'/api/notes/',method:'get'"
+  <table id="tt" style="width:900px;height:auto"
+	  data-options="iconCls:'icon-edit',url:'/api/notes/',method:'get',
+	  		pagination:true,idField:'id',fitColumns:true"
       title="Editable DataGrid">
     <thead>
       <tr>
