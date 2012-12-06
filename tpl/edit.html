@@ -30,18 +30,23 @@
           text:'delete',
           iconCls:'icon-remove',
           handler:function(){
-            var row = $('#tt').datagrid('getSelected');
-            if (row){
-              var index = $('#tt').datagrid('getRowIndex', row);
+            var rows = $('#tt').datagrid('getSelections');
+	    $.post("/delete/", {
+              data: JSON.stringify(rows),
+	    });
+            for (i in rows) {
+              var index = $('#tt').datagrid('getRowIndex', rows[i]);
               $('#tt').datagrid('deleteRow', index);
             }
           }
         },'-',{
-          text:'accept',
+          text:'Save',
           iconCls:'icon-save',
-          handler:function(){
+          handler:function() {
             $('#tt').datagrid('acceptChanges');
-	    $.post('../api/notes/', {data: JSON.stringify($('#tt').datagrid('getRows'))})
+	    $.post("/api/notes/", {
+              data: JSON.stringify($('#tt').datagrid('getRows')),
+            });
           }
         },'-',{
           text:'reject',
@@ -50,11 +55,15 @@
             $('#tt').datagrid('rejectChanges');
           }
         },'-',{
-          text:'GetChanges',
-          iconCls:'icon-search',
+          text:'SaveChanges',
+          iconCls:'icon-save',
           handler:function(){
             var rows = $('#tt').datagrid('getChanges');
-            alert('changed rows: ' + rows.length + ' lines');
+            //$.post('/api/notes/', {data: JSON.stringify(rows)})
+            alert('changed: ' + rows.length + ' lines');
+            for (var i = 0; i < rows.length; i++) {
+              console.log(rows[i]);
+            }
           }
         }],
         onBeforeLoad:function(){
@@ -66,6 +75,7 @@
             $('#tt').datagrid('beginEdit', rowIndex);
           }
           lastIndex = rowIndex;
+          //console.log(rowIndex + ' selected');
         }
       });
     });
@@ -90,6 +100,5 @@
       </tr>
     </thead>
   </table>
-  
 </body>
 </html>

@@ -40,23 +40,43 @@ class APINotes(RequestHandler):
     cursor = conn.cursor()
 
     data = self.get_argument('data')
-    print 'post:', data
+    print 'data posted:', data
     for row in eval(data):
-       cursor.execute("""INSERT INTO books(id,name,author) VALUES('%s','%s','%s')""" % \
-		       (row['id'], row['name'], row['author'])
-       )
+      cursor.execute("""
+        SELECT * FROM addbook('%s', '%s', '%s');
+        """ % (row['id'], row['name'], row['author'])
+      )
     conn.commit()
     conn.close()
 
   def put(self):
-    print 'put'
+    print 'put called'
 
   def delete(self):
-    print 'delete'
+    print 'delete called'
+    data = self.get_argument('data')
+    print 'delete:', data 
 
+
+class Delete(RequestHandler):
+  def post(self):
+    conn = connect("user='pguser' host='localhost' dbname='pgdb' password='pgpass'")
+    cursor = conn.cursor()
+
+    data = self.get_argument('data')
+    print 'data posted:', data
+
+    for row in eval(data):
+      cursor.execute("""
+        DELETE FROM books WHERE id='%s';
+        """ % (row['id'])
+      )
+    conn.commit()
+    conn.close()
 
 routes = [
   (r'/', Main),
+  (r'/delete/', Delete),
   (r'/edit/', Edit),
   (r'/api/notes/', APINotes),
 ]
