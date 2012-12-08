@@ -1,18 +1,13 @@
-
-create or replace function addbook(text,text,text) returns void as
-$BODY$
+CREATE OR REPLACE FUNCTION addbook(myid TEXT, mynm TEXT, myau TEXT) RETURNS VOID AS
+$$
 DECLARE
-idcount int;
-idcount2 int;
-myid alias for $1;
-mynm alias for $2;
-myau alias for $3;
+mytmp TEXT;
 BEGIN
 	IF (myid <> '' AND mynm <> '')
 	THEN
-		idcount = (SELECT COUNT(*) FROM books WHERE books.id=myid);
+		SELECT id INTO mytmp FROM books WHERE books.id=myid;
 
-		IF (idcount < 1)
+		IF (NOT FOUND)
 		THEN
 			INSERT INTO books VALUES(myid, mynm, myau);
 		ELSE
@@ -20,6 +15,6 @@ BEGIN
 		END IF;
 	END IF;
 END;
-$BODY$
+$$
 LANGUAGE plpgsql
 ;

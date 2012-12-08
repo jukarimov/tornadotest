@@ -6,7 +6,6 @@ import os
 import sys
 
 cwd = os.path.dirname(__file__)
-sys.path.append(cwd)
 
 import tornado.ioloop
 import tornado.httpserver
@@ -15,14 +14,17 @@ from tornado.web import RequestHandler
 from psycopg2 import connect
 from psycopg2.extras import RealDictCursor
 
+from json import loads as json_parse
 
 class Main(RequestHandler):
   def get(self):
-    self.render('main.html')
 
-class Edit(RequestHandler):
-  def get(self):
-    self.render('edit.html')
+    clientui = self.get_argument('ui', None)
+
+    if clientui == 'kendo':
+      self.render('kendoedit.html')
+    else:
+      self.render('edit.html')
 
 class APINotes(RequestHandler):
   def get(self):
@@ -30,6 +32,7 @@ class APINotes(RequestHandler):
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     cursor.execute('SELECT * FROM books')
     records = cursor.fetchall()
+
     self.write({
       'total':len(records),
       'rows':records
@@ -41,11 +44,10 @@ class APINotes(RequestHandler):
 
     data = self.get_argument('data')
     print 'data posted:', data
-    for row in eval(data):
-      cursor.execute("""
-        SELECT * FROM addbook('%s', '%s', '%s');
-        """ % (row['id'], row['name'], row['author'])
-      )
+    rows = json_parse(data)
+    for row in rows:
+      cursor.execute("SELECT * FROM addbook(%s, %s, %s);",
+		      (row['id'], row['name'], row['author']))
     conn.commit()
     conn.close()
 
@@ -66,19 +68,17 @@ class Delete(RequestHandler):
     data = self.get_argument('data')
     print 'data posted:', data
 
-    for row in eval(data):
-      cursor.execute("""
-        DELETE FROM books WHERE id='%s';
-        """ % (row['id'])
-      )
+    rows = json_parse(data)
+    for row in rows:
+      cursor.execute("DELETE FROM books WHERE id=%s;", (row['id'],))
     conn.commit()
     conn.close()
 
 routes = [
   (r'/', Main),
   (r'/delete/', Delete),
-  (r'/edit/', Edit),
   (r'/api/notes/', APINotes),
+  (r'/api/notes/([^/]*)', APINotes),
 ]
 
 settings = {
