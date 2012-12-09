@@ -9,76 +9,129 @@
   <script type="text/javascript" src="../media/easyui/jquery-1.8.0.min.js"></script>
   <script type="text/javascript" src="../media/easyui/jquery.easyui.min.js"></script>
   <script>
+
+    function makeID() {
+      var nextID = '';
+      var az = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      var rows = $('#tt').datagrid('getRows');
+      var i = rows.length;
+      if (!i) return 'AA';
+      var lastID = rows[i-1].id;
+      if (lastID[1] == 'Z') {
+        nextID += az[az.indexOf(lastID[0])+1];
+        nextID += 'A';
+      } else {
+        nextID += lastID[0];
+        nextID += az[az.indexOf(lastID[1])+1];
+      }
+      return nextID;
+    };
+    
+    function nextID() {
+      var rows = $('#tt').datagrid('getRows');
+      var last_rowid = 0;
+      if (rows.length)
+        last_rowid = rows[rows.length - 1].id;
+      last_rowid = parseInt(last_rowid);
+      return (last_rowid + 1).toString();
+    };
+
     $(function(){
       var lastIndex;
       $('#tt').datagrid({
         toolbar:[{
-          text:'append',
+          text:'New',
           iconCls:'icon-add',
           handler:function(){
             $('#tt').datagrid('endEdit', lastIndex);
             $('#tt').datagrid('appendRow',{
-              id:'',
-              name:'',
-              author:'',
+              id: makeID(),
+              name:'book title',
+              author:'book\'s author',
             });
             lastIndex = $('#tt').datagrid('getRows').length-1;
             $('#tt').datagrid('selectRow', lastIndex);
             $('#tt').datagrid('beginEdit', lastIndex);
           }
         },'-',{
-          text:'delete',
+          text:'Delete',
           iconCls:'icon-remove',
-          handler:function(){
+          handler:function() {
             var rows = $('#tt').datagrid('getSelections');
-	    $.post("/delete/", {
-              data: JSON.stringify(rows),
-	    });
-            for (i in rows) {
-              var index = $('#tt').datagrid('getRowIndex', rows[i]);
-              $('#tt').datagrid('deleteRow', index);
+	    if (!rows.length) {
+              alert('No rows selected');
+	      return;
+	    }
+            var delids = [];
+            for (i = 0; i < rows.length; i++) {
+              delids.push(rows[i].id);
             }
-          }
+	    var yes = confirm('Delete ' + rows.length + ' rows?');
+	    if (yes) {
+              $.ajax('/api/notes/' + delids.join(), {
+                'type':'DELETE'
+              });
+              $('#tt').datagrid('reload');
+            }
+	  }
         },'-',{
           text:'Save',
           iconCls:'icon-save',
           handler:function() {
-            $('#tt').datagrid('acceptChanges');
+            $('#tt').datagrid('endEdit', lastIndex);
 	    $.post("/api/notes/", {
-              data: JSON.stringify($('#tt').datagrid('getRows')),
+              data: JSON.stringify($('#tt').datagrid('getChanges')),
             });
+            $('#tt').datagrid('acceptChanges');
+            $('#tt').datagrid('reload');
           }
         },'-',{
-          text:'reject',
-          iconCls:'icon-undo',
+          text:'Cancel',
+          iconCls:'icon-cancel',
           handler:function(){
             $('#tt').datagrid('rejectChanges');
           }
         },'-',{
-          text:'SaveChanges',
-          iconCls:'icon-save',
+          text:'None',
+          iconCls:'icon-ok',
           handler:function(){
-            var rows = $('#tt').datagrid('getChanges');
-            //$.post('/api/notes/', {data: JSON.stringify(rows)})
-            alert('changed: ' + rows.length + ' lines');
-            for (var i = 0; i < rows.length; i++) {
-              console.log(rows[i]);
-            }
+            $('#tt').datagrid('clearSelections');
           }
-        }],
+        },'-',{
+          text:'All',
+          iconCls:'icon-ok',
+          handler:function(){
+            $('#tt').datagrid('selectAll');
+          }
+        }
+	],
+	url: '/api/notes/',
+	title: 'DataGrid Test',
+	queryParams: { page:'' },
+	pagination: true,
+	rownumbers: true,
+	idField: 'id',
+	nowrap: true,
+	autoRowHeight: false,
+	striped: true,
+	sortName: 'id',
         onBeforeLoad:function(){
           $(this).datagrid('rejectChanges');
         },
-        onClickRow:function(rowIndex){
+        onDblClickRow:function(rowIndex){
           if (lastIndex != rowIndex){
             $('#tt').datagrid('endEdit', lastIndex);
             $('#tt').datagrid('beginEdit', rowIndex);
           }
           lastIndex = rowIndex;
-          //console.log(rowIndex + ' selected');
         }
       });
+      var pager = $('#tt').datagrid('getPager');
+        pager.pagination({
+        showPageList: true,
+      })
     });
+
   </script>
 </head>
 <body>
@@ -89,12 +142,12 @@
   </div>
   
   <table id="tt" style="width:900px;height:auto"
-	  data-options="iconCls:'icon-edit',url:'/api/notes/',method:'get',
-	  		pagination:true,idField:'id',fitColumns:true"
-      title="Editable DataGrid">
+	 data-options="iconCls:'icon-edit',url:'/api/notes/',method:'get',
+	 pagination:true,idField:'id',fitColumns:true"
+	title="Editable DataGrid">
     <thead>
       <tr>
-        <th data-options="field:'id',width:80,editor:'text'">ID</th>
+        <th data-options="field:'id',width:80">ID</th>
         <th data-options="field:'name',width:100,editor:'text'">Book</th>
         <th data-options="field:'author',width:80,editor:'text'">Author</th>
       </tr>

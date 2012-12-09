@@ -10,6 +10,7 @@ cwd = os.path.dirname(__file__)
 import tornado.ioloop
 import tornado.httpserver
 from tornado.web import RequestHandler
+from tornado.web import HTTPError
 
 from psycopg2 import connect
 from psycopg2.extras import RealDictCursor
@@ -27,18 +28,43 @@ class Main(RequestHandler):
       self.render('edit.html')
 
 class APINotes(RequestHandler):
-  def get(self):
+  def get(self, arg):
+    page = self.get_argument('page', None)
+    size = self.get_argument('rows', None)
+    sorder = self.get_argument('sort', None)
     conn = connect("user='pguser' host='localhost' dbname='pgdb' password='pgpass'")
     cursor = conn.cursor(cursor_factory=RealDictCursor)
-    cursor.execute('SELECT * FROM books')
+    records = []
+    if not page or not size:
+      cursor.execute('SELECT * FROM books')
+    else:
+      try:
+        page = abs(int(page) - 1)
+        size = abs(int(size))
+      except:
+        self.write('Bad query') 
+        print 'Bad query', page, size
+	return 
+      if page > sys.maxint or size > sys.maxint:
+        self.write('Bad query') 
+        print 'Bad query', page, size
+	return 
+
+      cursor.execute('SELECT * FROM books ORDER BY ' + str(sorder) + ' OFFSET %s LIMIT %s',
+		     ((page * size), size))
+
     records = cursor.fetchall()
 
+    cursor.execute('SELECT COUNT(id) FROM books')
+    total_rows = cursor.fetchall()[0]['count']
+    cursor.close()
+
     self.write({
-      'total':len(records),
-      'rows':records
+      'total': total_rows,
+      'rows': records
     })
 
-  def post(self):
+  def post(self, arg):
     conn = connect("user='pguser' host='localhost' dbname='pgdb' password='pgpass'")
     cursor = conn.cursor()
 
@@ -47,38 +73,26 @@ class APINotes(RequestHandler):
     rows = json_parse(data)
     for row in rows:
       cursor.execute("SELECT * FROM addbook(%s, %s, %s);",
-		      (row['id'], row['name'], row['author']))
+		      (str(row['id']), row['name'], row['author']))
     conn.commit()
     conn.close()
 
-  def put(self):
-    print 'put called'
+  def put(self, arg):
+    print 'put called', arg
 
-  def delete(self):
-    print 'delete called'
-    data = self.get_argument('data')
-    print 'delete:', data 
-
-
-class Delete(RequestHandler):
-  def post(self):
+  def delete(self, arg):
     conn = connect("user='pguser' host='localhost' dbname='pgdb' password='pgpass'")
     cursor = conn.cursor()
 
-    data = self.get_argument('data')
-    print 'data posted:', data
+    for i in arg.split(','):
+      cursor.execute("DELETE FROM books WHERE id=%s;", (i,))
 
-    rows = json_parse(data)
-    for row in rows:
-      cursor.execute("DELETE FROM books WHERE id=%s;", (row['id'],))
     conn.commit()
     conn.close()
 
 routes = [
   (r'/', Main),
-  (r'/delete/', Delete),
-  (r'/api/notes/', APINotes),
-  (r'/api/notes/([^/]*)', APINotes),
+  (r'/api/notes/([^/]+)?/?', APINotes),
 ]
 
 settings = {
