@@ -12,36 +12,47 @@
 <div id="grid"></div>
  <script>
 
-var dataSource = [];
+var myjson;
+
+$.getJSON('/api/notes/', function(data) { 
+  console.log(data);
+  myjson = data.rows;
+});
+
 $(document).ready(function () {
 
+    var dataSource = new kendo.data.DataSource({
+      pageSize: 10,
+      data: myjson,
+      autoSync: true,
+      schema: {
+        model: {
+          id: "id",
+	  fields: {
+	    id: { type: "string" },
+	    name: { type: "string" },
+	    author: { type: "string" },
+          }
+        }
+      },
+    });
 
-  $.getJSON('/api/notes/', function(data) {
-      dataSource = data.rows;
-  });
-
-  $("#grid").kendoGrid({
-    dataSource: {
-      data: [
-        {'id': 1, 'name': 2, 'author': 3},
-        {'id': 1, 'name': 2, 'author': 3},
-        {'id': 1, 'name': 2, 'author': 3},
-      ] ,
-    },
-    navigatable: true,
-    pageable: true,
-    height: 300,
-    toolbar: ["create", "save", "cancel"],
-    columns: [
-      { field: "id", title: "ID", width: 150 },
-      { field: "name", title: "Book", width: 150 },
-      { field: "author", title: "Author", width: 100 },
-      { command: "destroy", title: "&nbsp;", width: 110 }
-    ],
-    editable: true
-  });
+    $("#grid").kendoGrid({
+      dataSource: dataSource,
+      navigatable: true,
+      pageable: true,
+      height: 300,
+      editable: true,
+      toolbar: ["create", "save", "cancel"],
+      columns: [
+        { field: "id", title: "ID", width: 150 },
+        { field: "name", title: "Book", width: 150 },
+        { field: "author", title: "Author", width: 100 },
+        { command: "destroy", title: "&nbsp;", width: 110 }
+      ],
+    });
 });
- </script>
+</script>
 </div>
 </body>
 </html>
