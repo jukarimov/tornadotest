@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding:utf-8
-
 # http://en.wikipedia.org/wiki/Representational_state_transfer
+
 import os
 import sys
 
@@ -9,6 +9,7 @@ cwd = os.path.dirname(__file__)
 
 import tornado.ioloop
 import tornado.httpserver
+
 from tornado.web import RequestHandler
 from tornado.web import HTTPError
 
@@ -19,16 +20,19 @@ from json import loads as json_parse
 
 class Main(RequestHandler):
   def get(self):
-
     clientui = self.get_argument('ui', None)
-
     if clientui == 'kendo':
-      self.render('kendoedit.html')
+      self.render('kendo.html')
     else:
-      self.render('edit.html')
+      self.render('main.html')
 
 class APINotes(RequestHandler):
   def get(self, arg):
+    order_map = {
+      'id': 1,
+      'name': 2,
+      'author': 3,
+    }
     page = self.get_argument('page', None)
     size = self.get_argument('rows', None)
     sorder = self.get_argument('sort', None)
@@ -36,7 +40,7 @@ class APINotes(RequestHandler):
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     records = []
     if not page or not size:
-      cursor.execute('SELECT * FROM books')
+      cursor.execute('SELECT * FROM books ORDER BY id')
     else:
       try:
         page = abs(int(page) - 1)
@@ -44,14 +48,18 @@ class APINotes(RequestHandler):
       except:
         self.write('Bad query') 
         print 'Bad query', page, size
-	return 
+        return 
       if page > sys.maxint or size > sys.maxint:
         self.write('Bad query') 
         print 'Bad query', page, size
-	return 
+        return
 
-      cursor.execute('SELECT * FROM books ORDER BY ' + str(sorder) + ' OFFSET %s LIMIT %s',
-		     ((page * size), size))
+      if not sorder:
+        sorder = 1
+
+      cursor.execute('SELECT * FROM books ORDER BY %s OFFSET %s LIMIT %s',
+                     (order_map.get(sorder, 1), (page * size), size)
+      )
 
     records = cursor.fetchall()
 
@@ -68,24 +76,30 @@ class APINotes(RequestHandler):
     conn = connect("user='pguser' host='localhost' dbname='pgdb' password='pgpass'")
     cursor = conn.cursor()
 
-    data = self.get_argument('data')
+    data = self.get_argument('data', None)
     print 'data posted:', data
+
+    if data is None:
+      return HTTPError(404)
+
     rows = json_parse(data)
     for row in rows:
-      cursor.execute("SELECT * FROM addbook(%s, %s, %s);",
-		      (str(row['id']), row['name'], row['author']))
+      cursor.execute("SELECT * FROM addbook(%s, %s, %s)",
+                     (row['id'], row['name'], row['author'])
+      )
     conn.commit()
     conn.close()
 
   def put(self, arg):
-    print 'put called', arg
+    data = self.get_argument('data', None)
+    print 'put posted:', data, arg
 
   def delete(self, arg):
     conn = connect("user='pguser' host='localhost' dbname='pgdb' password='pgpass'")
     cursor = conn.cursor()
 
     for i in arg.split(','):
-      cursor.execute("DELETE FROM books WHERE id=%s;", (i,))
+      cursor.execute("DELETE FROM books WHERE id=%s", (i,))
 
     conn.commit()
     conn.close()
