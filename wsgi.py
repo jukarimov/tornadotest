@@ -20,27 +20,27 @@ from json import loads as json_parse
 
 class Main(RequestHandler):
   def get(self):
-    clientui = self.get_argument('ui', None)
-    if clientui == 'kendo':
-      self.render('kendo.html')
-    else:
-      self.render('main.html')
+    ui = self.get_argument('ui', 'main')
+    self.render('%s.html' % ui, ui = ui)
 
 class APINotes(RequestHandler):
-  def get(self, arg):
+  @property
+  def db(self):
+    return connect("user='pguser' host='localhost' dbname='pgdb' password='pgpass'")
+
+  def get(self, rid=None):
     order_map = {
-      'id': 1,
+      'rid': 4,
       'name': 2,
       'author': 3,
     }
-    page = self.get_argument('page', None)
-    size = self.get_argument('rows', None)
-    sorder = self.get_argument('sort', None)
-    conn = connect("user='pguser' host='localhost' dbname='pgdb' password='pgpass'")
-    cursor = conn.cursor(cursor_factory=RealDictCursor)
-    records = []
+    conn    = self.db
+    cursor  = conn.cursor(cursor_factory=RealDictCursor)
+    page    = self.get_argument('page', None)
+    size    = self.get_argument('rows', None)
+    sorder  = self.get_argument('sort', None)
     if not page or not size:
-      cursor.execute('SELECT * FROM books ORDER BY id')
+      cursor.execute('SELECT books.*, row_number() over() as rid FROM books')
     else:
       try:
         page = abs(int(page) - 1)
@@ -54,12 +54,16 @@ class APINotes(RequestHandler):
         print 'Bad query', page, size
         return
 
-      if not sorder:
-        sorder = 1
-
-      cursor.execute('SELECT * FROM books ORDER BY %s OFFSET %s LIMIT %s',
-                     (order_map.get(sorder, 1), (page * size), size)
-      )
+      cursor.execute('SELECT books.*,      \
+										                   row_number()  \
+																													over() as rid \
+																													FROM books    \
+																													ORDER BY %s   \
+																													OFFSET %s     \
+																													LIMIT %s',
+								(order_map.get(sorder,1),
+									 (page * size),
+								  size))
 
     records = cursor.fetchall()
 
@@ -72,35 +76,31 @@ class APINotes(RequestHandler):
       'rows': records
     })
 
-  def post(self, arg):
-    conn = connect("user='pguser' host='localhost' dbname='pgdb' password='pgpass'")
+  def post(self, rid = None):
+    conn   = self.db
     cursor = conn.cursor()
-
-    data = self.get_argument('data', None)
-    print 'data posted:', data
-
-    if data is None:
-      return HTTPError(404)
-
-    rows = json_parse(data)
-    for row in rows:
-      cursor.execute("SELECT * FROM addbook(%s, %s, %s)",
-                     (row['id'], row['name'], row['author'])
-      )
+    cursor.execute("INSERT INTO books (name,author) VALUES (%s, %s)", (
+      self.get_argument('name'),
+      self.get_argument('author'))
+    )
     conn.commit()
     conn.close()
 
-  def put(self, arg):
-    data = self.get_argument('data', None)
-    print 'put posted:', data, arg
-
-  def delete(self, arg):
-    conn = connect("user='pguser' host='localhost' dbname='pgdb' password='pgpass'")
+  def put(self, rid=None):
+    conn   = self.db
     cursor = conn.cursor()
+    cursor.execute("UPDATE books SET name=%s, author=%s WHERE id=%s", (
+      self.get_argument('name'),
+      self.get_argument('author'),
+      self.get_argument('id'))
+    )
+    conn.commit()
+    conn.close()
 
-    for i in arg.split(','):
-      cursor.execute("DELETE FROM books WHERE id=%s", (i,))
-
+  def delete(self, rid=None):
+    conn   = self.db
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM books WHERE id = %s", (rid,))
     conn.commit()
     conn.close()
 

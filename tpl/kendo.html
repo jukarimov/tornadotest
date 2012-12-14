@@ -30,7 +30,7 @@ $(document).ready(function () {
       update: {
         url: '/api/notes/',
         dataType: 'json',
-        type: 'POST',
+        type: 'PUT',
         data: function() {
           var postData = JSON.stringify($('#grid').data().kendoGrid._data);
           $.post('/api/notes/', { data: postData });
@@ -77,7 +77,7 @@ $(document).ready(function () {
     navigatable: true,
     pageable: true,
     height: 500,
-    editable: true,
+    editable: 'popup',
     toolbar: [
       { 
         name: "create",

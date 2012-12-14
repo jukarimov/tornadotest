@@ -1,93 +1,20 @@
 
 $(function(){
   var lastIndex;
-  $('#tt').datagrid({
-    toolbar:[{
-      text:'New',
-      iconCls:'icon-add',
-      handler: function(){
-        $('#tt').datagrid('endEdit', lastIndex);
-        $('#tt').datagrid('appendRow',{
-          id: nextID(),
-          name:'book title',
-          author:'book\'s author',
-        });
-        lastIndex = $('#tt').datagrid('getRows').length-1;
-        $('#tt').datagrid('selectRow', lastIndex);
-        $('#tt').datagrid('beginEdit', lastIndex);
-      }
-    },
-    '-',
-    {
-      text:'Delete',
-      iconCls:'icon-remove',
-      handler:function() {
-        var rows = $('#tt').datagrid('getSelections');
-        if (!rows.length) {
-          alert('No rows selected');
-          return;
-        }
-        var delids = [];
-        for (i = 0; i < rows.length; i++) {
-          delids.push(rows[i].id);
-        }
-        var yes = confirm('Delete ' + rows.length + ' rows?');
-        if (yes) {
-          $.ajax('/api/notes/' + delids.join(), {
-            'type':'DELETE'
-          });
-          $('#tt').datagrid('reload');
-        }
-      }
-    },
-    '-',
-    {
-      text:'Save',
-      iconCls:'icon-save',
-      handler:function() {
-        $('#tt').datagrid('endEdit', lastIndex);
-        $.post("/api/notes/", {
-          data: JSON.stringify($('#tt').datagrid('getChanges')),
-        });
-        $('#tt').datagrid('acceptChanges');
-        $('#tt').datagrid('reload');
-      }
-    },
-    '-',
-    {
-      text:'Cancel',
-      iconCls:'icon-cancel',
-      handler:function(){
-        $('#tt').datagrid('rejectChanges');
-      }
-    },
-    '-',
-    {
-      text:'None',
-      iconCls:'icon-ok',
-      handler:function(){
-        $('#tt').datagrid('clearSelections');
-      }
-    },
-    '-',
-    {
-      text:'All',
-      iconCls:'icon-ok',
-      handler:function(){
-        $('#tt').datagrid('selectAll');
-      }
-    }],
-    url: '/api/notes/',
+  var lastEdit = 0;
+  var tbl = $('#tt');
+  tbl.datagrid({
+				url: '/api/notes/',
     method: 'get',
-    title: 'DataGrid Test',
-    queryParams: { page:'' },
+    title: 'DataGrid',
     pagination: true,
     rownumbers: true,
-    idField: 'id',
+    idField: 'rid',
     nowrap: true,
     autoRowHeight: false,
     striped: true,
-    sortName: 'id',
+    sortName: 'rid',
+    singleSelect:true,
     fitColumns:true,
     onBeforeLoad: function() { $(this).datagrid('rejectChanges'); },
     onDblClickRow: function(rowIndex){
@@ -98,30 +25,93 @@ $(function(){
       lastIndex = rowIndex;
     }
   });
-});
 
-function makeID() {
-  var nextID = '';
-  var az = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  var rows = $('#tt').datagrid('getRows');
-  var i = rows.length;
-  if (!i) return 'AA';
-  var lastID = rows[i-1].id;
-  if (lastID[1] == 'Z') {
-    nextID += az[az.indexOf(lastID[0])+1];
-  nextID += 'A';
-  } else {
-    nextID += lastID[0];
-    nextID += az[az.indexOf(lastID[1])+1];
-  }
-  return nextID;
-};
+  $('#btn_add').click(function(){
+    tbl.datagrid('endEdit', lastIndex);
+    tbl.datagrid('appendRow',{
+      rid: nextID(),
+      name: 'book title',
+      author:'book\'s author',
+    });
+    lastIndex = tbl.datagrid('getRows').length - 1;
+    tbl.datagrid('selectRow', lastIndex);
+    tbl.datagrid('beginEdit', lastIndex);
+  });
+
+  $('#btn_upd').click(function(){
+    tbl.datagrid('endEdit', lastIndex);
+    var row = tbl.datagrid('getSelected');
+    if (row) {
+						var this_index = tbl.datagrid('getRowIndex', row);
+						if (this_index == lastIndex && !lastEdit) {
+						  tbl.datagrid('endEdit', this_index);
+						  //tbl.datagrid('unselectAll');
+								lastEdit = 1;
+								return;
+						}
+						lastIndex = tbl.datagrid('getRowIndex', row);
+						tbl.datagrid('beginEdit', lastIndex);
+						lastEdit = 0;
+    }
+  });
+
+  $('#btn_del').click(function(){
+    tbl.datagrid('endEdit', lastIndex);
+    var row = tbl.datagrid('getSelected');
+
+    if (row) {
+      $.messager.confirm('Confirm','Are you sure you want to delete record?', function(r){
+        if (r) {
+										var n = tbl.datagrid('getRowIndex', row);
+          tbl.datagrid('deleteRow', n);
+        }
+      });
+    }
+  });
+
+  $('#btn_cancel').click(function(){
+    tbl.datagrid('rejectChanges');
+  });
+
+  $('#btn_save').click(function(){
+    var add_recods = tbl.datagrid('getChanges', 'inserted');
+    var upd_recods = tbl.datagrid('getChanges', 'updated');
+    var del_recods = tbl.datagrid('getChanges', 'deleted');
+
+    tbl.datagrid('acceptChanges');
+
+    $.each(add_recods, function(i, row) {
+      $.ajax('/api/notes/', {
+        'type':'POST',
+        'data': {
+          'name':row.name,
+          'author':row.author
+        }
+      });
+    });
+
+				$.each(upd_recods, function(i, row) {
+						$.ajax('/api/notes/', {
+								'type':'PUT',
+								'data': {
+										'id':row.id,
+										'name':row.name,
+										'author':row.author
+								}
+						});
+				});
+
+    $.each(del_recods, function(i, row) {
+      $.ajax('/api/notes/' + row.id, {'type':'DELETE'});
+    });
+  });
+});
 
 function nextID() {
   var rows = $('#tt').datagrid('getRows');
   var last_rowid = 0;
   if (rows.length)
-    last_rowid = rows[rows.length - 1].id;
+    last_rowid = rows[rows.length - 1].rid;
   last_rowid = parseInt(last_rowid);
   return (last_rowid + 1).toString();
 };

@@ -7,13 +7,22 @@
 <link rel="stylesheet" type="text/css" href="../media/easyui/themes/icon.css">
 <script type="text/javascript" src="../media/easyui/jquery-1.8.0.min.js"></script>
 <script type="text/javascript" src="../media/easyui/jquery.easyui.min.js"></script>
-<script src="../media/main.js"></script>
+<script src="../media/{{ ui }}.js"></script>
 </head>
 <body>
-   <table id="tt" style="width:900px;height:auto" class="easyui-datagrid">
+		<div id="tt_toolbar" style="user-select:none;-webkit-user-select:none;-moz-user-select: -moz-none;">
+     <a id="btn_add" class="easyui-linkbutton" data-options="plain:true, iconCls:'icon-add'"></a>
+     <a id="btn_upd" class="easyui-linkbutton" data-options="plain:true, iconCls:'icon-edit'"></a>
+     <a id="btn_del" class="easyui-linkbutton" data-options="plain:true, iconCls:'icon-remove'"></a>
+     <span style="float:right">
+       <a id="btn_save"   class="easyui-linkbutton" data-options="plain:true, iconCls:'icon-save'"></a>
+       <a id="btn_cancel" class="easyui-linkbutton" data-options="plain:true, iconCls:'icon-cancel'"></a>
+     </span>
+   </div>
+   <table id="tt" style="height:400px" class="easyui-datagrid" data-options="toolbar:'#tt_toolbar'">
      <thead>
        <tr>
-         <th data-options="field:'id',width:80,sortable:true">ID</th>
+         <th data-options="field:'rid',width:80,sortable:true">ID</th>
          <th data-options="field:'name',width:100,editor:'text',sortable:true">Book</th>
          <th data-options="field:'author',width:80,editor:'text',sortable:true">Author</th>
        </tr>
