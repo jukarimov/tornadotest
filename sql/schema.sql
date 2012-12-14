@@ -5,4 +5,4 @@ CREATE TABLE books (
   author TEXT      NOT NULL
 );
 GRANT ALL ON books TO pguser;
-GRANT USAGE, SELECT ON SEQUENCE books_id_seq to pguser;
+GRANT USAGE, SELECT ON SEQUENCE books_id_seq TO pguser;

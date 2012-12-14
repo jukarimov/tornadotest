@@ -4,7 +4,7 @@ $(function(){
   var lastEdit = 0;
   var tbl = $('#tt');
   tbl.datagrid({
-				url: '/api/notes/',
+    url: '/api/notes/',
     method: 'get',
     title: 'DataGrid',
     pagination: true,
@@ -42,16 +42,16 @@ $(function(){
     tbl.datagrid('endEdit', lastIndex);
     var row = tbl.datagrid('getSelected');
     if (row) {
-						var this_index = tbl.datagrid('getRowIndex', row);
-						if (this_index == lastIndex && !lastEdit) {
-						  tbl.datagrid('endEdit', this_index);
-						  //tbl.datagrid('unselectAll');
-								lastEdit = 1;
-								return;
-						}
-						lastIndex = tbl.datagrid('getRowIndex', row);
-						tbl.datagrid('beginEdit', lastIndex);
-						lastEdit = 0;
+      var this_index = tbl.datagrid('getRowIndex', row);
+      if (this_index == lastIndex && !lastEdit) {
+        tbl.datagrid('endEdit', this_index);
+        //tbl.datagrid('unselectAll');
+        lastEdit = 1;
+        return;
+      }
+      lastIndex = tbl.datagrid('getRowIndex', row);
+      tbl.datagrid('beginEdit', lastIndex);
+      lastEdit = 0;
     }
   });
 
@@ -62,7 +62,7 @@ $(function(){
     if (row) {
       $.messager.confirm('Confirm','Are you sure you want to delete record?', function(r){
         if (r) {
-										var n = tbl.datagrid('getRowIndex', row);
+          var n = tbl.datagrid('getRowIndex', row);
           tbl.datagrid('deleteRow', n);
         }
       });
@@ -90,16 +90,16 @@ $(function(){
       });
     });
 
-				$.each(upd_recods, function(i, row) {
-						$.ajax('/api/notes/', {
-								'type':'PUT',
-								'data': {
-										'id':row.id,
-										'name':row.name,
-										'author':row.author
-								}
-						});
-				});
+    $.each(upd_recods, function(i, row) {
+      $.ajax('/api/notes/', {
+        'type':'PUT',
+        'data': {
+          'id':row.id,
+          'name':row.name,
+          'author':row.author
+        }
+      });
+    });
 
     $.each(del_recods, function(i, row) {
       $.ajax('/api/notes/' + row.id, {'type':'DELETE'});

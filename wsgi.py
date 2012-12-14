@@ -55,15 +55,15 @@ class APINotes(RequestHandler):
         return
 
       cursor.execute('SELECT books.*,      \
-										                   row_number()  \
-																													over() as rid \
-																													FROM books    \
-																													ORDER BY %s   \
-																													OFFSET %s     \
-																													LIMIT %s',
-								(order_map.get(sorder,1),
-									 (page * size),
-								  size))
+                             row_number()  \
+                             over() as rid \
+                             FROM books    \
+                             ORDER BY %s   \
+                             OFFSET %s     \
+                             LIMIT %s',
+        (order_map.get(sorder,1),
+          (page * size),
+          size))
 
     records = cursor.fetchall()
 
