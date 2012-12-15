@@ -29,7 +29,6 @@ $(function(){
   $('#btn_add').click(function(){
     tbl.datagrid('endEdit', lastIndex);
     tbl.datagrid('appendRow',{
-      rid: nextID(),
       name: 'book title',
       author:'book\'s author',
     });
@@ -45,7 +44,6 @@ $(function(){
       var this_index = tbl.datagrid('getRowIndex', row);
       if (this_index == lastIndex && !lastEdit) {
         tbl.datagrid('endEdit', this_index);
-        //tbl.datagrid('unselectAll');
         lastEdit = 1;
         return;
       }
@@ -74,13 +72,13 @@ $(function(){
   });
 
   $('#btn_save').click(function(){
-    var add_recods = tbl.datagrid('getChanges', 'inserted');
-    var upd_recods = tbl.datagrid('getChanges', 'updated');
-    var del_recods = tbl.datagrid('getChanges', 'deleted');
+    var add_records = tbl.datagrid('getChanges', 'inserted');
+    var upd_records = tbl.datagrid('getChanges', 'updated');
+    var del_records = tbl.datagrid('getChanges', 'deleted');
 
     tbl.datagrid('acceptChanges');
 
-    $.each(add_recods, function(i, row) {
+    $.each(add_records, function(i, row) {
       $.ajax('/api/notes/', {
         'type':'POST',
         'data': {
@@ -90,7 +88,7 @@ $(function(){
       });
     });
 
-    $.each(upd_recods, function(i, row) {
+    $.each(upd_records, function(i, row) {
       $.ajax('/api/notes/', {
         'type':'PUT',
         'data': {
@@ -101,17 +99,9 @@ $(function(){
       });
     });
 
-    $.each(del_recods, function(i, row) {
+    $.each(del_records, function(i, row) {
       $.ajax('/api/notes/' + row.id, {'type':'DELETE'});
     });
   });
 });
 
-function nextID() {
-  var rows = $('#tt').datagrid('getRows');
-  var last_rowid = 0;
-  if (rows.length)
-    last_rowid = rows[rows.length - 1].rid;
-  last_rowid = parseInt(last_rowid);
-  return (last_rowid + 1).toString();
-};

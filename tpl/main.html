@@ -22,9 +22,28 @@
    <table id="tt" style="height:400px" class="easyui-datagrid" data-options="toolbar:'#tt_toolbar'">
      <thead>
        <tr>
-         <th data-options="field:'rid',width:80,sortable:true">ID</th>
-         <th data-options="field:'name',width:100,editor:'text',sortable:true">Book</th>
-         <th data-options="field:'author',width:80,editor:'text',sortable:true">Author</th>
+         <th data-options="field:'id',width:30,sortable:true,">ID</th>
+         <th data-options="field:'name',width:100,sortable:true,
+           editor:{
+             type:'validatebox',
+             options:{
+               valueField:'name',
+               textField:'name',
+               data:name,
+               required:true
+             }
+           }">Book</th>
+         <th data-options="field:'author',width:80,editor:'text',sortable:true,
+           editor:{
+             type:'validatebox',
+             options:{
+               valueField:'name',
+               textField:'name',
+               data:name,
+               required:true
+             }
+           }">Author</th>
+         <th data-options="field:'rid',width:30,sortable:true">№</th>
        </tr>
      </thead>
    </table>

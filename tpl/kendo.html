@@ -11,39 +11,33 @@
 <div id="grid"></div>
 <script>
 
-$(document).ready(function () {
+$(document).ready(function (){
 
   dataSource = new kendo.data.DataSource({
-    pageSize: 10,
+    pageSize: 100,
     autoSync: false,
     transport: {
       read: {
         url: '/api/notes/',
         dataType: 'json',
-        type: 'GET'
+        type: 'GET',
       },
       create: {
-        /*url: '/api/notes/',
+        url: '/api/notes/',
         dataType: 'json',
-        type: 'POST'*/
+        type: 'POST'
       },
       update: {
         url: '/api/notes/',
         dataType: 'json',
         type: 'PUT',
-        data: function() {
-          var postData = JSON.stringify($('#grid').data().kendoGrid._data);
-          $.post('/api/notes/', { data: postData });
-        }
       },
       destroy: {
-        url: '/api/notes/',
-        dataType: 'json',
+								url: function(options, operation) {
+												 return '/api/notes/' + options.id;
+								},
         type: 'DELETE',
-        data: function() {
-          console.log("delete data");
-        }
-      }
+						},
     },
     schema: {
       data: function(reply) { 
@@ -54,18 +48,25 @@ $(document).ready(function () {
         fields: {
           id: {
             type: "string",
-            editable: true,
+            editable: false,
+            nullable: false,
+          },
+          rid: {
+            type: "string",
+            editable: false,
             nullable: false
           },
           name: {
             type: "string",
             editable: true,
-            nullable: false
+            nullable: false,
+            validation: { required: true }
           },
           author: {
             type: "string",
             editable: true,
-            nullable: true
+            nullable: false,
+            validation: { required: true }
           },
         },
       },
@@ -79,27 +80,17 @@ $(document).ready(function () {
     height: 500,
     editable: 'popup',
     toolbar: [
-      { 
-        name: "create",
-        text: "New"
-      }, 
-      { 
-        name: "save",
-        text: "Save" 
-      }, 
-      { 
-        name: "cancel",
-        text: "Cancel"
-      }
+      { name: "create", text: "New" }, 
+      { name: "cancel", text: "Cancel" }
     ],
     columns: [
-      { field: "id", title: "ID", width: 150 },
-      { field: "name", title: "Book", width: 150 },
-      { field: "author", title: "Author", width: 100 },
-      { command: "destroy", title: "&nbsp;", width: 110 }
+      { field: "id", title: "ID", width: 50, editable: false },
+      { field: "name", title: "Book", width: 150, nullable: false },
+      { field: "author", title: "Author", width: 100, nullable: false },
+      { field: "rid", title: "№", width: 50, editable: false },
+      { command: ["edit", "destroy"], title: "&nbsp;", width: 110 },
     ],
   });
-
 });
 
 </script>

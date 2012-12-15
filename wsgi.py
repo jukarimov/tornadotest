@@ -30,9 +30,10 @@ class APINotes(RequestHandler):
 
   def get(self, rid=None):
     order_map = {
-      'rid': 4,
+      'id': 1,
       'name': 2,
       'author': 3,
+      'rid': 4,
     }
     conn    = self.db
     cursor  = conn.cursor(cursor_factory=RealDictCursor)
@@ -77,27 +78,52 @@ class APINotes(RequestHandler):
     })
 
   def post(self, rid = None):
+    name   = self.get_argument('name', None)
+    author = self.get_argument('author', None)
+
+    if name == '' or name == None:
+      print 'post: warning: empty name'
+      return
+
+    if author == '' or author == None:
+      print 'post: warning: empty author'
+      return
+
     conn   = self.db
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO books (name,author) VALUES (%s, %s)", (
-      self.get_argument('name'),
-      self.get_argument('author'))
-    )
+    cursor.execute("INSERT INTO books (name,author) VALUES (%s, %s)", (name,author))
     conn.commit()
     conn.close()
 
   def put(self, rid=None):
+    name   = self.get_argument('name')
+    author = self.get_argument('author')
+    rowid  = self.get_argument('id')
+
+    if name == '' or name == None:
+      print 'put: warning: empty name'
+      return
+
+    if author == '' or author == None:
+      print 'put: warning: empty author'
+      return
+
+    if rowid == '' or rowid == None:
+      print 'put: warning: empty rowid'
+      return
+
     conn   = self.db
     cursor = conn.cursor()
-    cursor.execute("UPDATE books SET name=%s, author=%s WHERE id=%s", (
-      self.get_argument('name'),
-      self.get_argument('author'),
-      self.get_argument('id'))
-    )
+    cursor.execute("UPDATE books SET name=%s, author=%s WHERE id=%s", (name,author,rowid))
     conn.commit()
     conn.close()
 
   def delete(self, rid=None):
+
+    if not rid or rid == '':
+      print 'delete: warning: empty id'
+      return
+
     conn   = self.db
     cursor = conn.cursor()
     cursor.execute("DELETE FROM books WHERE id = %s", (rid,))
