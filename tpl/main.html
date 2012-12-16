@@ -9,7 +9,7 @@
 <script type="text/javascript" src="../media/easyui/jquery.easyui.min.js"></script>
 <script src="../media/ui/{{ ui }}.js"></script>
 </head>
-<body>
+<body onload="$(window).resize();">
   <div id="tt_toolbar" style="user-select:none;-webkit-user-select:none;-moz-user-select: -moz-none;">
      <a id="btn_add" class="easyui-linkbutton" data-options="plain:true, iconCls:'icon-add'"></a>
      <a id="btn_upd" class="easyui-linkbutton" data-options="plain:true, iconCls:'icon-edit'"></a>

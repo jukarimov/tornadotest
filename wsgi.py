@@ -40,7 +40,12 @@ class APINotes(RequestHandler):
     page    = self.get_argument('page', None)
     size    = self.get_argument('rows', None)
     sorder  = self.get_argument('sort', None)
+
+    if not sorder:
+      print 'get: warning: no sorder specified'
+
     if not page or not size:
+      print 'get: warning: no page or size specified'
       cursor.execute('SELECT books.*, row_number() over() as rid FROM books')
     else:
       try:
@@ -48,11 +53,11 @@ class APINotes(RequestHandler):
         size = abs(int(size))
       except:
         self.write('Bad query') 
-        print 'Bad query', page, size
+        print 'get: warning: Bad query', page, size
         return 
       if page > sys.maxint or size > sys.maxint:
         self.write('Bad query') 
-        print 'Bad query', page, size
+        print 'get: warning: Bad query', page, size
         return
 
       cursor.execute('SELECT books.*,      \
@@ -65,9 +70,7 @@ class APINotes(RequestHandler):
         (order_map.get(sorder,1),
           (page * size),
           size))
-
     records = cursor.fetchall()
-
     cursor.execute('SELECT COUNT(id) FROM books')
     total_rows = cursor.fetchall()[0]['count']
     cursor.close()
@@ -88,6 +91,8 @@ class APINotes(RequestHandler):
     if author == '' or author == None:
       print 'post: warning: empty author'
       return
+
+    print 'post: note:', (name,author)
 
     conn   = self.db
     cursor = conn.cursor()
@@ -112,6 +117,8 @@ class APINotes(RequestHandler):
       print 'put: warning: empty rowid'
       return
 
+    print 'put: note:', (name,author,)
+
     conn   = self.db
     cursor = conn.cursor()
     cursor.execute("UPDATE books SET name=%s, author=%s WHERE id=%s", (name,author,rowid))
@@ -123,6 +130,8 @@ class APINotes(RequestHandler):
     if not rid or rid == '':
       print 'delete: warning: empty id'
       return
+
+    print 'delete: note:', (rid)
 
     conn   = self.db
     cursor = conn.cursor()
@@ -142,10 +151,16 @@ settings = {
   'template_path': '%s/tpl/' % cwd,
 }
 
-if __name__=='__main__':
+def runserver(port=8000):
   app = tornado.web.Application(routes, **settings)
   http_server = tornado.httpserver.HTTPServer(app)
-  http_server.listen(8000)
-  print 'http://localhost:8000'
+  http_server.listen(port)
+  print 'http://localhost:' + str(port)
   tornado.ioloop.IOLoop.instance().start()
+  
 
+if __name__=='__main__':
+  try:
+    runserver()
+  except KeyboardInterrupt:
+    print '\nBye'

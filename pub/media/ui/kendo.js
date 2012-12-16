@@ -2,8 +2,12 @@
 $(document).ready(function (){
 
   dataSource = new kendo.data.DataSource({
-    pageSize: 100,
-    autoSync: false,
+    type: "json",
+    pageSize: 10,
+    //autoSync: true,
+    serverSorting: true,
+    serverFiltering: true,
+    //sort: { field: "id", dir: "asc" },
     transport: {
       read: {
         url: '/api/notes/',
@@ -13,7 +17,10 @@ $(document).ready(function (){
       create: {
         url: '/api/notes/',
         dataType: 'json',
-        type: 'POST'
+        type: 'POST',
+        complete: function(request, textStatus) {
+          $("#grid").data("kendoGrid").dataSource.read();
+        }
       },
       update: {
         url: '/api/notes/',
@@ -21,8 +28,8 @@ $(document).ready(function (){
         type: 'PUT',
       },
       destroy: {
-        url: function(options, operation) {
-             return '/api/notes/' + options.id;
+        url: function(row) {
+          return '/api/notes/' + row.id;
         },
         type: 'DELETE',
       },
@@ -30,6 +37,9 @@ $(document).ready(function (){
     schema: {
       data: function(reply) { 
         return reply.rows;
+      },
+      total: function(reply) {
+        return reply.total;
       },
       model: {
         id: "id",
@@ -65,9 +75,13 @@ $(document).ready(function (){
     dataSource: dataSource,
     navigatable: true,
     pageable: true,
-    height: 500,
+    //height: 500,
     editable: 'popup',
+    sortable: true,
+    filterable: true,
+    scrollable: true,
     toolbar: [
+      //{ name: "save", text: "Save" }, 
       { name: "create", text: "New" }, 
       { name: "cancel", text: "Cancel" }
     ],
@@ -81,3 +95,8 @@ $(document).ready(function (){
   });
 });
 
+$(window).resize(function(){
+  var height = $(window).height();
+  $('#grid').height(height - (height/5));
+  $('#grid').find(".k-grid-content").height(height - (height/5) - 90);
+});

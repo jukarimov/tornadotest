@@ -102,6 +102,12 @@ $(function(){
     $.each(del_records, function(i, row) {
       $.ajax('/api/notes/' + row.id, {'type':'DELETE'});
     });
+
   });
+});
+
+$(window).resize(function(){
+  var height = $(window).height();
+  $('#tt').datagrid('resize', { height: height } )
 });
 
