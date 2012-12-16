@@ -2,12 +2,9 @@
 $(document).ready(function (){
 
   dataSource = new kendo.data.DataSource({
-    type: "json",
     pageSize: 10,
-    //autoSync: true,
     serverSorting: true,
     serverFiltering: true,
-    //sort: { field: "id", dir: "asc" },
     transport: {
       read: {
         url: '/api/notes/',

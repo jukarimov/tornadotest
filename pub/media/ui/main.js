@@ -108,6 +108,6 @@ $(function(){
 
 $(window).resize(function(){
   var height = $(window).height();
-  $('#tt').datagrid('resize', { height: height } )
+  $('#tt').datagrid('resize', { height: height-30 } )
 });
 
