@@ -18,8 +18,6 @@ from psycopg2.extras import RealDictCursor
 
 from json import loads as json_parse
 
-from time import asctime
-
 class Main(RequestHandler):
   def get(self):
     ui = self.get_argument('ui', 'main')
@@ -42,7 +40,7 @@ class APINotes(RequestHandler):
     rows    = self.get_argument('rows', None)
     sort    = self.get_argument('sort', None)
     order   = self.get_argument('order',None)
-    print asctime(), 'GET:', page, rows, sort, order
+    
     if not page or not rows:
       print 'get: warning: no page or size specified'
       cursor.execute('SELECT * FROM books')
@@ -89,8 +87,6 @@ class APINotes(RequestHandler):
       print 'post: warning: empty author'
       return
 
-    print 'post: note:', (name,author)
-
     conn   = self.db
     cursor = conn.cursor()
     cursor.execute("INSERT INTO books (name,author) VALUES (%s, %s)", (name,author))
@@ -114,8 +110,6 @@ class APINotes(RequestHandler):
       print 'put: warning: empty rowid'
       return
 
-    print 'put: note:', (name,author,)
-
     conn   = self.db
     cursor = conn.cursor()
     cursor.execute("UPDATE books SET name=%s, author=%s WHERE id=%s", (name,author,rowid))
@@ -127,8 +121,6 @@ class APINotes(RequestHandler):
     if not rid or rid == '':
       print 'delete: warning: empty id'
       return
-
-    print 'delete: note:', (rid)
 
     conn   = self.db
     cursor = conn.cursor()

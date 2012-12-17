@@ -3,7 +3,7 @@ $(document).ready(function (){
 
   dataSource = new kendo.data.DataSource({
     pageSize: 10,
-				serverPaging: true,
+    serverPaging: true,
     serverSorting: true,
     serverFiltering: true,
     transport: {
@@ -31,29 +31,29 @@ $(document).ready(function (){
         },
         type: 'DELETE',
       },
-						parameterMap: function(options, operation) {
-								var map = {};
-								if (operation == 'read') {
-												map.page = options.page;
-												map.rows = options.take;
-												map.sort = options.sort;
-												if (map.sort) {
-												  map.sort = map.sort[0];
-														if (map.sort) {
-																var t = map.sort;
-																map.sort = t.field;
-																map.order = t.dir;
-														}
-												}
-								}
-								if (operation == 'update') {
-							   map = options;
-								}
-								if (operation == 'create') {
-							   map = options;
-								}
-								return map;
-						},
+      parameterMap: function(options, operation) {
+        var map = {};
+        if (operation == 'read') {
+            map.page = options.page;
+            map.rows = options.take;
+            map.sort = options.sort;
+            if (map.sort) {
+              map.sort = map.sort[0];
+              if (map.sort) {
+                var t = map.sort;
+                map.sort = t.field;
+                map.order = t.dir;
+              }
+            }
+        }
+        if (operation == 'update') {
+          map = options;
+        }
+        if (operation == 'create') {
+          map = options;
+        }
+        return map;
+      },
     },
     schema: {
       data: function(reply) { 
