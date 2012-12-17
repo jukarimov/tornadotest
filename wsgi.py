@@ -18,6 +18,8 @@ from psycopg2.extras import RealDictCursor
 
 from json import loads as json_parse
 
+from time import asctime
+
 class Main(RequestHandler):
   def get(self):
     ui = self.get_argument('ui', 'main')
@@ -29,52 +31,47 @@ class APINotes(RequestHandler):
     return connect("user='pguser' host='localhost' dbname='pgdb' password='pgpass'")
 
   def get(self, rid=None):
-    order_map = {
+    sort_map = {
       'id': 1,
       'name': 2,
       'author': 3,
-      'rid': 4,
     }
     conn    = self.db
     cursor  = conn.cursor(cursor_factory=RealDictCursor)
     page    = self.get_argument('page', None)
-    size    = self.get_argument('rows', None)
-    sorder  = self.get_argument('sort', None)
-
-    if not sorder:
-      print 'get: warning: no sorder specified'
-
-    if not page or not size:
+    rows    = self.get_argument('rows', None)
+    sort    = self.get_argument('sort', None)
+    order   = self.get_argument('order',None)
+    print asctime(), 'GET:', page, rows, sort, order
+    if not page or not rows:
       print 'get: warning: no page or size specified'
-      cursor.execute('SELECT books.*, row_number() over() as rid FROM books')
+      cursor.execute('SELECT * FROM books')
     else:
       try:
         page = abs(int(page) - 1)
-        size = abs(int(size))
+        rows = abs(int(rows))
       except:
         self.write('Bad query') 
-        print 'get: warning: Bad query', page, size
+        print 'get: warning: Bad query', page, rows
         return 
-      if page > sys.maxint or size > sys.maxint:
+      if page > sys.maxint or rows > sys.maxint:
         self.write('Bad query') 
-        print 'get: warning: Bad query', page, size
+        print 'get: warning: Bad query', page, rows
         return
-
-      cursor.execute('SELECT books.*,      \
-                             row_number()  \
-                             over() as rid \
-                             FROM books    \
-                             ORDER BY %s   \
-                             OFFSET %s     \
-                             LIMIT %s',
-        (order_map.get(sorder,1),
-          (page * size),
-          size))
+      if order != 'asc' and order != 'desc':
+        order = 'asc'
+      cursor.execute('SELECT *                    \
+                        FROM books                \
+                        ORDER BY %s ' + order + ' \
+                        OFFSET %s                 \
+                        LIMIT %s',
+                      (sort_map.get(sort,1),
+                        (page * rows),
+                        rows))
     records = cursor.fetchall()
     cursor.execute('SELECT COUNT(id) FROM books')
     total_rows = cursor.fetchall()[0]['count']
     cursor.close()
-
     self.write({
       'total': total_rows,
       'rows': records

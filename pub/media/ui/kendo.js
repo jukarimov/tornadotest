@@ -3,8 +3,9 @@ $(document).ready(function (){
 
   dataSource = new kendo.data.DataSource({
     pageSize: 10,
-    //serverSorting: true,
-    //serverFiltering: true,
+				serverPaging: true,
+    serverSorting: true,
+    serverFiltering: true,
     transport: {
       read: {
         url: '/api/notes/',
@@ -30,7 +31,29 @@ $(document).ready(function (){
         },
         type: 'DELETE',
       },
-
+						parameterMap: function(options, operation) {
+								var map = {};
+								if (operation == 'read') {
+												map.page = options.page;
+												map.rows = options.take;
+												map.sort = options.sort;
+												if (map.sort) {
+												  map.sort = map.sort[0];
+														if (map.sort) {
+																var t = map.sort;
+																map.sort = t.field;
+																map.order = t.dir;
+														}
+												}
+								}
+								if (operation == 'update') {
+							   map = options;
+								}
+								if (operation == 'create') {
+							   map = options;
+								}
+								return map;
+						},
     },
     schema: {
       data: function(reply) { 
@@ -43,14 +66,9 @@ $(document).ready(function (){
         id: "id",
         fields: {
           id: {
-            type: "string",
+            type: "number",
             editable: false,
             nullable: false,
-          },
-          rid: {
-            type: "string",
-            editable: false,
-            nullable: false
           },
           name: {
             type: "string",
@@ -79,15 +97,12 @@ $(document).ready(function (){
     filterable: true,
     scrollable: true,
     toolbar: [
-      //{ name: "save", text: "Save" }, 
-      { name: "create", text: "New" }, 
-      { name: "cancel", text: "Cancel" }
+      { name: "create", text: "Add" }, 
     ],
     columns: [
       { field: "id", title: "ID", width: 50, editable: false },
       { field: "name", title: "Book", width: 150, nullable: false },
       { field: "author", title: "Author", width: 100, nullable: false },
-      { field: "rid", title: "№", width: 50, editable: false },
       { command: ["edit", "destroy"], title: "&nbsp;", width: 110 },
     ],
   });
@@ -95,6 +110,6 @@ $(document).ready(function (){
 
 $(window).resize(function(){
   var height = $(window).height();
-  $('#grid').height(height - (height/5));
-  $('#grid').find(".k-grid-content").height(height - (height/5) - 90);
+  $('#grid').height(height - (height/9));
+  $('#grid').find(".k-grid-content").height(height - (height/9) - 90);
 });
