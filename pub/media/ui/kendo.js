@@ -3,8 +3,8 @@ $(document).ready(function (){
 
   dataSource = new kendo.data.DataSource({
     pageSize: 10,
-    serverSorting: true,
-    serverFiltering: true,
+    //serverSorting: true,
+    //serverFiltering: true,
     transport: {
       read: {
         url: '/api/notes/',
@@ -30,6 +30,7 @@ $(document).ready(function (){
         },
         type: 'DELETE',
       },
+
     },
     schema: {
       data: function(reply) { 
