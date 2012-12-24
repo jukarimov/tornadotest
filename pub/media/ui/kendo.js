@@ -1,6 +1,4 @@
-
 $(document).ready(function (){
-
   dataSource = new kendo.data.DataSource({
     pageSize: 10,
     serverPaging: true,
@@ -37,7 +35,7 @@ $(document).ready(function (){
           map.page = options.page
           map.rows = options.take
           map.sort = options.sort
-										map.filt = options.filter
+          map.filt = options.filter
           if (map.sort) {
             map.sort = map.sort[0]
             if (map.sort) {
@@ -46,9 +44,9 @@ $(document).ready(function (){
               map.order = t.dir
             }
           }
-										if (map.filt) {
+          if (map.filt) {
             console.log(kendo.stringify(map.filt))
-										}
+          }
         }
         if (operation == 'update') {
           map = options
@@ -118,7 +116,6 @@ $(document).ready(function (){
     ],
   })
 })
-
 $(window).resize(function(){
   var height = $(window).height()
   $('#grid').height(height - (height/9))
