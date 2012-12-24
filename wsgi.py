@@ -16,7 +16,14 @@ from tornado.web import HTTPError
 from psycopg2 import connect
 from psycopg2.extras import RealDictCursor
 
-from json import loads as json_parse
+from datetime import date
+import json
+
+class DateEncoder(json.JSONEncoder):
+  def default(self, obj):
+    if isinstance(obj, date):
+      return str(obj)
+    #return json.JSONEncoder.default(self, obj)
 
 class Main(RequestHandler):
   def get(self):
@@ -33,13 +40,14 @@ class APINotes(RequestHandler):
       'id': 1,
       'name': 2,
       'author': 3,
+      'published': 4,
     }
     conn    = self.db
     cursor  = conn.cursor(cursor_factory=RealDictCursor)
     page    = self.get_argument('page', None)
     rows    = self.get_argument('rows', None)
     sort    = self.get_argument('sort', None)
-    order   = self.get_argument('order',None)
+    order   = self.get_argument('order','asc')
     
     if not page or not rows:
       print 'get: warning: no page or size specified'
@@ -56,17 +64,18 @@ class APINotes(RequestHandler):
         self.write('Bad query') 
         print 'get: warning: Bad query', page, rows
         return
-      if order != 'asc' and order != 'desc':
-        order = 'asc'
-      cursor.execute('SELECT *                    \
-                        FROM books                \
-                        ORDER BY %s ' + order + ' \
-                        OFFSET %s                 \
+      cursor.execute('SELECT                        \
+                        id, name, author, published \
+                        FROM books                  \
+                        ORDER BY %s ' + order + '   \
+                        OFFSET %s                   \
                         LIMIT %s',
                       (sort_map.get(sort,1),
                         (page * rows),
                         rows))
     records = cursor.fetchall()
+    records = json.loads(json.dumps(records, cls=DateEncoder))
+    print records
     cursor.execute('SELECT COUNT(id) FROM books')
     total_rows = cursor.fetchall()[0]['count']
     cursor.close()
@@ -78,6 +87,7 @@ class APINotes(RequestHandler):
   def post(self, rid = None):
     name   = self.get_argument('name', None)
     author = self.get_argument('author', None)
+    published = self.get_argument('published', None)
 
     if name == '' or name == None:
       print 'post: warning: empty name'
@@ -89,14 +99,18 @@ class APINotes(RequestHandler):
 
     conn   = self.db
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO books (name,author) VALUES (%s, %s)", (name,author))
+    cursor.execute("INSERT INTO books \
+                    (name,author,published) VALUES (%s,%s,%s)", (name,author,published))
     conn.commit()
     conn.close()
 
   def put(self, rid=None):
     name   = self.get_argument('name')
     author = self.get_argument('author')
+    published = self.get_argument('published', None)
     rowid  = self.get_argument('id')
+    conn   = self.db
+    cursor = conn.cursor()
 
     if name == '' or name == None:
       print 'put: warning: empty name'
@@ -110,9 +124,12 @@ class APINotes(RequestHandler):
       print 'put: warning: empty rowid'
       return
 
-    conn   = self.db
-    cursor = conn.cursor()
-    cursor.execute("UPDATE books SET name=%s, author=%s WHERE id=%s", (name,author,rowid))
+    if rowid == 'null':
+      cursor.execute("INSERT INTO books \
+                    (name,author,published) VALUES (%s,%s,%s)", (name,author,published))
+    else:
+      cursor.execute("UPDATE books SET name=%s, author=%s WHERE id=%s", (name,author,rowid))
+
     conn.commit()
     conn.close()
 

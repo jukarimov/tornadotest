@@ -1,4 +1,3 @@
-
 $(function(){
   var lastIndex;
   var lastEdit = 0;
@@ -29,18 +28,17 @@ $(function(){
       lastIndex = rowIndex;
     }
   });
-
   $('#btn_add').click(function(){
     tbl.datagrid('endEdit', lastIndex);
     tbl.datagrid('appendRow',{
       name: 'book title',
       author:'book\'s author',
+      published:'12-13-2000',
     });
     lastIndex = tbl.datagrid('getRows').length - 1;
     tbl.datagrid('selectRow', lastIndex);
     tbl.datagrid('beginEdit', lastIndex);
   });
-
   $('#btn_upd').click(function(){
     tbl.datagrid('endEdit', lastIndex);
     var row = tbl.datagrid('getSelected');
@@ -56,11 +54,9 @@ $(function(){
       lastEdit = 0;
     }
   });
-
   $('#btn_del').click(function(){
     tbl.datagrid('endEdit', lastIndex);
     var row = tbl.datagrid('getSelected');
-
     if (row) {
       $.messager.confirm('Confirm','Are you sure you want to delete record?', function(r){
         if (r) {
@@ -70,48 +66,41 @@ $(function(){
       });
     }
   });
-
   $('#btn_cancel').click(function(){
     tbl.datagrid('rejectChanges');
   });
-
   $('#btn_save').click(function(){
     var add_records = tbl.datagrid('getChanges', 'inserted');
     var upd_records = tbl.datagrid('getChanges', 'updated');
     var del_records = tbl.datagrid('getChanges', 'deleted');
-
     tbl.datagrid('acceptChanges');
-
     $.each(add_records, function(i, row) {
       $.ajax('/api/notes/', {
         'type':'POST',
         'data': {
           'name':row.name,
-          'author':row.author
+          'author':row.author,
+          'published':row.published
         }
       });
     });
-
     $.each(upd_records, function(i, row) {
       $.ajax('/api/notes/', {
         'type':'PUT',
         'data': {
           'id':row.id,
           'name':row.name,
-          'author':row.author
+          'author':row.author,
+          'published':row.published
         }
       });
     });
-
     $.each(del_records, function(i, row) {
       $.ajax('/api/notes/' + row.id, {'type':'DELETE'});
     });
-
   });
 });
-
 $(window).resize(function(){
   var height = $(window).height();
   $('#tt').datagrid('resize', { height: height-30 } )
 });
-

@@ -5,7 +5,7 @@ $(document).ready(function (){
     pageSize: 10,
     serverPaging: true,
     serverSorting: true,
-    serverFiltering: true,
+    //serverFiltering: true,
     transport: {
       read: {
         url: '/api/notes/',
@@ -17,7 +17,7 @@ $(document).ready(function (){
         dataType: 'json',
         type: 'POST',
         complete: function(request, textStatus) {
-          $("#grid").data("kendoGrid").dataSource.read();
+          $("#grid").data("kendoGrid").dataSource.read()
         }
       },
       update: {
@@ -27,40 +27,48 @@ $(document).ready(function (){
       },
       destroy: {
         url: function(row) {
-          return '/api/notes/' + row.id;
+          return '/api/notes/' + row.id
         },
         type: 'DELETE',
       },
       parameterMap: function(options, operation) {
-        var map = {};
+        var map = {}
         if (operation == 'read') {
-            map.page = options.page;
-            map.rows = options.take;
-            map.sort = options.sort;
+          map.page = options.page
+          map.rows = options.take
+          map.sort = options.sort
+										map.filt = options.filter
+          if (map.sort) {
+            map.sort = map.sort[0]
             if (map.sort) {
-              map.sort = map.sort[0];
-              if (map.sort) {
-                var t = map.sort;
-                map.sort = t.field;
-                map.order = t.dir;
-              }
+              var t = map.sort
+              map.sort = t.field
+              map.order = t.dir
             }
+          }
+										if (map.filt) {
+            console.log(kendo.stringify(map.filt))
+										}
         }
         if (operation == 'update') {
-          map = options;
+          map = options
+          map.published = options.published.toISOString().split('T')[0]
         }
         if (operation == 'create') {
-          map = options;
+          map = options
+          map.published = options.published.toISOString().split('T')[0]
         }
-        return map;
+        return map
       },
     },
     schema: {
       data: function(reply) { 
-        return reply.rows;
+        var rs = eval(reply.rows)
+        return rs; 
       },
       total: function(reply) {
-        return reply.total;
+        var tt = reply.total
+        return tt; 
       },
       model: {
         id: "id",
@@ -68,24 +76,26 @@ $(document).ready(function (){
           id: {
             type: "number",
             editable: false,
-            nullable: false,
           },
           name: {
             type: "string",
             editable: true,
-            nullable: false,
             validation: { required: true }
           },
           author: {
             type: "string",
             editable: true,
-            nullable: false,
             validation: { required: true }
           },
+          published: {
+            type: "date",
+            editable: true,
+            validation: { required: true }
+          }
         },
       },
     },
-  });
+  })
 
   $("#grid").kendoGrid({
     dataSource: dataSource,
@@ -103,13 +113,14 @@ $(document).ready(function (){
       { field: "id", title: "ID", width: 50, editable: false },
       { field: "name", title: "Book", width: 150, nullable: false },
       { field: "author", title: "Author", width: 100, nullable: false },
+      { field: "published", title: "Published", width: 100, nullable: false },
       { command: ["edit", "destroy"], title: "&nbsp;", width: 110 },
     ],
-  });
-});
+  })
+})
 
 $(window).resize(function(){
-  var height = $(window).height();
-  $('#grid').height(height - (height/9));
-  $('#grid').find(".k-grid-content").height(height - (height/9) - 90);
-});
+  var height = $(window).height()
+  $('#grid').height(height - (height/9))
+  $('#grid').find(".k-grid-content").height(height - (height/9) - 90)
+})

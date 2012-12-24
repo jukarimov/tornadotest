@@ -19,7 +19,7 @@
        <a id="btn_cancel" class="easyui-linkbutton" data-options="plain:true, iconCls:'icon-cancel'"></a>
      </span>
    </div>
-   <table id="tt" style="height:500px" class="easyui-datagrid" data-options="toolbar:'#tt_toolbar'">
+   <table id="tt" style="height:500px" data-options="toolbar:'#tt_toolbar'">
      <thead>
        <tr>
          <th data-options="field:'id',width:30,sortable:true,">ID</th>
@@ -29,7 +29,7 @@
              options:{
                valueField:'name',
                textField:'name',
-               data:name,
+               data:'name',
                required:true
              }
            }">Book</th>
@@ -39,10 +39,20 @@
              options:{
                valueField:'name',
                textField:'name',
-               data:name,
+               data:'author',
                required:true
              }
            }">Author</th>
+         <th data-options="field:'published',width:80,editor:'text',sortable:true,
+           editor:{
+             type:'datebox',
+             options:{
+               valueField:'name',
+               textField:'name',
+               data:'published',
+               required:true
+             }
+           }">Published</th>
        </tr>
      </thead>
    </table>
