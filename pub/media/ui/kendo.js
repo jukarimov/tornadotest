@@ -3,7 +3,7 @@ $(document).ready(function (){
     pageSize: 10,
     serverPaging: true,
     serverSorting: true,
-    //serverFiltering: true,
+    serverFiltering: true,
     transport: {
       read: {
         url: '/api/notes/',
@@ -36,6 +36,7 @@ $(document).ready(function (){
           map.rows = options.take
           map.sort = options.sort
           map.filt = options.filter
+          map.sqlc = []
           if (map.sort) {
             map.sort = map.sort[0]
             if (map.sort) {
@@ -45,28 +46,54 @@ $(document).ready(function (){
             }
           }
           if (map.filt) {
-            console.log(kendo.stringify(map.filt))
+            var filters = map.filt.filters
+            //console.log('##########[ BEGIN ]#########')
+            for (i in filters) {
+              if (filters[i].field) {
+                //console.log(objunpack(filters[i]))
+                map.sqlc.push(objunpack(filters[i]))
+                if (i < filters.length-1) {
+                  //console.log(objunpack(map.filt.logic))
+                  map.sqlc.push(objunpack(map.filt.logic))
+                }
+              } else {
+                if (i > 0 && (t=map.sqlc[map.sqlc.length-1]) != 'and' && t != 'or') {
+                  //console.log(objunpack(map.filt.logic))
+                  map.sqlc.push(objunpack(map.filt.logic))
+                }
+                //console.log(objunpack(filters[i].filters[0]))
+                map.sqlc.push(objunpack(filters[i].filters[0]))
+                //console.log(objunpack(filters[i].logic))
+                map.sqlc.push(objunpack(filters[i].logic))
+                //console.log(objunpack(filters[i].filters[1]))
+                map.sqlc.push(objunpack(filters[i].filters[1]))
+              }
+            }
+            //console.log('##########[ CUT HERE ]#########')
+            map.sqlc = map.sqlc.toString()
+            //console.log(map.sqlc)
           }
         }
         if (operation == 'update') {
           map = options
-          map.published = options.published.toISOString().split('T')[0]
+          map.published = Date2MDY(options.published)
         }
         if (operation == 'create') {
           map = options
-          map.published = options.published.toISOString().split('T')[0]
+          map.published = Date2MDY(options.published)
         }
+								console.log(map.published)
         return map
       },
     },
     schema: {
       data: function(reply) { 
-        var rs = eval(reply.rows)
-        return rs; 
+        var rs = reply.rows
+        return rs
       },
       total: function(reply) {
         var tt = reply.total
-        return tt; 
+        return tt
       },
       model: {
         id: "id",
@@ -111,7 +138,8 @@ $(document).ready(function (){
       { field: "id", title: "ID", width: 50, editable: false },
       { field: "name", title: "Book", width: 150, nullable: false },
       { field: "author", title: "Author", width: 100, nullable: false },
-      { field: "published", title: "Published", width: 100, nullable: false },
+      { field: "published", title: "Published", format: "{0:MM-dd-yyyy}",
+								width: 100, nullable: false },
       { command: ["edit", "destroy"], title: "&nbsp;", width: 110 },
     ],
   })
@@ -121,3 +149,20 @@ $(window).resize(function(){
   $('#grid').height(height - (height/9))
   $('#grid').find(".k-grid-content").height(height - (height/9) - 90)
 })
+function objunpack(o){
+  if (o.field && o.operator && o.value) {
+    if (o.field == 'published') {
+      var t = o.value
+      o.value = Date2MDY(t)
+    }
+    return [o.field, o.operator, o.value]
+  }
+  return o
+}
+function Date2MDY(date) {
+  var dmy = '';
+		dmy += String(date.getMonth()+1) + '-'
+		dmy += String(date.getDate()) + '-'
+		dmy += String(date.getFullYear())
+  return dmy;
+}
