@@ -48,7 +48,7 @@ $(document).ready(function (){
           if (map.filt) {
             var filters = map.filt.filters
             console.log('##########[ BEGIN ]#########')
-												var f1 = 0;
+            var f1 = 0;
             for (i in filters) {
               if (filters[i].field) {
                 console.log(objunpack(filters[i]))
@@ -144,7 +144,7 @@ $(document).ready(function (){
       { field: "id", title: "ID", width: 50 },
       { field: "book", title: "Book", width: 150 },
       { field: "author", title: "Author", width: 100 },
-      { field: "published", title: "Published", format: "{0:MM-dd-yyyy}",	width: 80 },
+      { field: "published", title: "Published", format: "{0:MM-dd-yyyy}", width: 80 },
       { field: "cat", title: "Category", width: 100 },
       { command: ["edit", "destroy"], title: "&nbsp;", width: 110 },
     ],
@@ -167,8 +167,8 @@ function objunpack(o){
 }
 function Date2MDY(date) {
   var dmy = '';
-		dmy += String(date.getMonth()+1) + '-'
-		dmy += String(date.getDate()) + '-'
-		dmy += String(date.getFullYear())
+  dmy += String(date.getMonth()+1) + '-'
+  dmy += String(date.getDate()) + '-'
+  dmy += String(date.getFullYear())
   return dmy;
 }

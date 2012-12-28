@@ -3,7 +3,7 @@ CREATE TABLE books (
   id        BIGSERIAL NOT NULL PRIMARY KEY,
   book      TEXT      NOT NULL,
   author    TEXT      NOT NULL,
-		catid     BIGINT    NOT NULL,
+  catid     BIGINT    NOT NULL,
   published DATE      NOT NULL
 );
 GRANT ALL ON books TO pguser;
