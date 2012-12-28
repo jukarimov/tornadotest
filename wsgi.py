@@ -17,12 +17,84 @@ from psycopg2 import connect
 from psycopg2.extras import RealDictCursor
 
 from datetime import date
-import json
+import json, re
 
 def isempty(string):
   if string == '' or string == None:
     return True
   return False
+
+sql_ops = {
+    'eq'              :'=',
+    'neq'             :'!=',
+    'lt'              :'<',
+    'gt'              :'>',
+    'contains'        :'ilike',
+    'doesnotcontain'  :'not ilike',
+    'startswith'      :'ilike_sw',
+    'endswith'        :'ilike_ew',
+}
+sql_logops = ['and','or']
+TABS = {
+  'books': 'id,book,author,catid,published'.split(','),
+  'category': 'id,cat'.split(',')
+}
+def parseSQL(sqlc):
+  exp_column = True
+  exp_operator = False
+  exp_value = False
+  exp_logic = False
+  opr = ''
+  SQL = 'SELECT b.*,c.cat FROM books b JOIN category c ON c.id = b.catid WHERE '
+  for i in sqlc.split(','):
+    if exp_column:
+      if i in TABS['books']:
+        SQL += 'b.' + i + ' '
+      elif i in TABS['category']:
+        SQL += 'c.' + i + ' '
+      else:
+        print '*'*20
+        print 'INCORRECT SQL CODE', i, 'COL NOT FOUND'
+        print '*'*20
+        return
+      exp_column = False
+      exp_operator = True
+      continue
+    elif exp_operator:
+      opr = sql_ops.get(i)
+      if not opr:
+        print '*'*20
+        print 'INCORRECT SQL CODE', i
+        print '*'*20
+        return
+      SQL += opr + ' '
+      exp_operator = False
+      exp_value = True
+      continue
+    elif exp_value:
+      if opr == 'ilike' or opr == 'not ilike':
+        SQL += "'%%" + i + "%%' "
+      elif opr == 'ilike_sw':
+        SQL += "'" + i + "%%' "
+      elif opr == 'ilike_ew':
+        SQL += " '%%" + i + "' "
+      else:
+        SQL += "'" + i + "' "
+      exp_value = False
+      exp_logic = True
+      continue
+    elif exp_logic:
+      if i not in sql_logops:
+        print '*'*20
+        print 'INCORRECT SQL CODE', i
+        print '*'*20
+        return
+      SQL += i + ' '
+      exp_logic = False
+      exp_column = True
+  SQL = re.sub('ilike_sw', 'ilike', SQL)
+  SQL = re.sub('ilike_ew', 'ilike', SQL)
+  return SQL
 
 class DateEncoder(json.JSONEncoder):
   def default(self, obj):
@@ -43,9 +115,10 @@ class APINotes(RequestHandler):
   def get(self, rid=None):
     sort_map = {
       'id': 1,
-      'name': 2,
+      'book': 2,
       'author': 3,
-      'published': 4,
+      'cat': 4,
+      'published': 5,
     }
     conn    = self.db
     cursor  = conn.cursor(cursor_factory=RealDictCursor)
@@ -57,39 +130,41 @@ class APINotes(RequestHandler):
 
     if isempty(page) or isempty(rows):
       print 'get: warning: no page or size specified'
-      cursor.execute('SELECT * FROM books')
+      cursor.execute('SELECT b.*,c.cat FROM books b JOIN category c ON b.catid = c.id')
     else:
       try:
         page = abs(int(page) - 1)
         rows = abs(int(rows))
       except:
-        self.write('Bad query') 
-        print 'get: warning: Bad query', page, rows
-        return 
-      if page > sys.maxint or rows > sys.maxint:
-        self.write('Bad query') 
+        self.write('Bad query')
         print 'get: warning: Bad query', page, rows
         return
+      if page > sys.maxint or rows > sys.maxint:
+        self.write('Bad query')
+        print 'get: warning: Bad query', page, rows
+        return
+      if order not in [ 'asc', 'desc' ]:
+        order = 'asc'
       if isempty(sqlc):
-        cursor.execute('SELECT                        \
-                          id, name, author, published \
-                          FROM books                  \
-                          ORDER BY %s ' + order + '   \
-                          OFFSET %s                   \
-                          LIMIT %s',
+        cursor.execute('SELECT b.*, c.cat                \
+                        FROM books b JOIN category c     \
+                        ON b.catid = c.id                \
+                        ORDER BY %s ' + order + '        \
+                        OFFSET %s                        \
+                        LIMIT %s',
                         (sort_map.get(sort,1),
                           (page * rows),
                           rows))
       else:
-        print '-'*20, "SQL CODE", '-'*20
         print sqlc
-        print '-'*20, "SQL CODE", '-'*20
-        cursor.execute('SELECT                        \
-                          id, name, author, published \
-                          FROM books                  \
-                          ORDER BY %s ' + order + '   \
-                          OFFSET %s                   \
-                          LIMIT %s',
+        print '-'*20, "PARSED SQL CODE", '-'*20
+        SQL = parseSQL(sqlc)
+        print SQL
+        print '-'*20, "CUT HERE", '-'*20
+        cursor.execute(SQL + \
+                       'ORDER BY %s ' + order + '   \
+                        OFFSET %s                   \
+                        LIMIT %s',
                         (sort_map.get(sort,1),
                           (page * rows),
                           rows))
@@ -108,56 +183,67 @@ class APINotes(RequestHandler):
     })
 
   def post(self, rid = None):
-    name   = self.get_argument('name', None)
-    author = self.get_argument('author', None)
+    book      = self.get_argument('book', None)
+    author    = self.get_argument('author', None)
+    cat       = self.get_argument('cat', None)
     published = self.get_argument('published', None)
 
-    if isempty(name):
-      print 'post: warning: empty name'
+    if isempty(book):
+      print 'post: warning: empty bookname'
       return
     if isempty(author):
       print 'post: warning: empty author'
+      return
+    if isempty(cat):
+      print 'post: warning: empty category'
       return
     if isempty(published):
       print 'post: warning: empty published'
       return
 
-    print 'POST:', name, author, published
+    print 'POST:', book, author, cat, published
 
     conn   = self.db
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO books \
-                      (name,author,published) \
-                      VALUES (%s,%s,%s)",
-                    (name,author,published))
+    cursor.execute("SELECT * FROM addbook \
+                      (%s,%s,%s,%s)",
+                    (book,author,
+                    cat,published))
     conn.commit()
     conn.close()
 
   def put(self, rid=None):
-    name   = self.get_argument('name')
-    author = self.get_argument('author')
+    book      = self.get_argument('book')
+    author    = self.get_argument('author')
+    cat       = self.get_argument('cat', None)
     published = self.get_argument('published', None)
-    rowid  = self.get_argument('id')
-    conn   = self.db
-    cursor = conn.cursor()
+    rowid     = self.get_argument('id')
+    conn      = self.db
+    cursor    = conn.cursor()
 
-    print 'PUT:', rowid, name, author, published
+    print 'PUT:', rowid, book, author, cat, published
 
     if isempty(rowid):
       print 'post: warning: empty rowid'
       return
-    if isempty(name):
-      print 'post: warning: empty name'
+    if isempty(book):
+      print 'post: warning: empty bookname'
       return
     if isempty(author):
       print 'post: warning: empty author'
+      return
+    if isempty(cat):
+      print 'post: warning: empty category'
       return
     if isempty(published):
       print 'post: warning: empty published'
       return
 
-    cursor.execute("UPDATE books SET name=%s, author=%s, published=%s \
-                    WHERE id=%s", (name,author,published,rowid))
+    cursor.execute("SELECT * FROM updbook \
+                      (%s,%s,%s,%s,%s)",
+                    (rowid,book,
+                    author,cat,
+                    published))
     conn.commit()
     conn.close()
 
