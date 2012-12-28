@@ -31,9 +31,10 @@ $(function(){
   $('#btn_add').click(function(){
     tbl.datagrid('endEdit', lastIndex);
     tbl.datagrid('appendRow',{
-      name: 'book title',
+      book: 'book title',
       author:'book\'s author',
       published:'12-13-2000',
+      cat:'book category',
     });
     lastIndex = tbl.datagrid('getRows').length - 1;
     tbl.datagrid('selectRow', lastIndex);
@@ -78,9 +79,10 @@ $(function(){
       $.ajax('/api/notes/', {
         'type':'POST',
         'data': {
-          'name':row.name,
+          'book':row.book,
           'author':row.author,
-          'published':row.published
+          'published':row.published,
+          'cat':row.cat,
         }
       });
     });
@@ -88,10 +90,10 @@ $(function(){
       $.ajax('/api/notes/', {
         'type':'PUT',
         'data': {
-          'id':row.id,
-          'name':row.name,
+          'book':row.book,
           'author':row.author,
-          'published':row.published
+          'published':row.published,
+          'cat':row.cat,
         }
       });
     });

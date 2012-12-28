@@ -47,33 +47,36 @@ $(document).ready(function (){
           }
           if (map.filt) {
             var filters = map.filt.filters
-            console.log('##########[ BEGIN ]#########')
+            //console.log('##########[ BEGIN ]#########')
             var f1 = 0;
             for (i in filters) {
               if (filters[i].field) {
-                console.log(objunpack(filters[i]))
+                //console.log(i)
+                if (i > 0 && map.sqlc[map.sqlc.length - 1] != 'and' && map.sqlc[map.sqlc.length - 1] != 'or') {
+                  //console.log(map.filt.logic)
+                  map.sqlc.push(map.filt.logic)
+                }
+                //console.log(objunpack(filters[i]))
                 map.sqlc.push(objunpack(filters[i]))
                 if (i < filters.length-1) {
-                  console.log(objunpack(map.filt.logic))
+                  //console.log(objunpack(map.filt.logic))
                   map.sqlc.push(objunpack(map.filt.logic))
                 }
               } else {
-                if (map.sqlc.length > 0 && ((t=map.sqlc[map.sqlc.length-1]) != 'and' && t != 'or')) {
-                  console.log(objunpack(map.filt.logic))
+                if (map.sqlc.length > 0) {
                   map.sqlc.push(objunpack(map.filt.logic))
                 }
-                console.log(objunpack(filters[i].filters[0]))
+                //console.log(objunpack(filters[i].filters[0]))
                 map.sqlc.push(objunpack(filters[i].filters[0]))
-                console.log(objunpack(filters[i].logic))
+                //console.log(objunpack(filters[i].logic))
                 map.sqlc.push(objunpack(filters[i].logic))
-                alert(objunpack(filters[i].logic))
-                console.log(objunpack(filters[i].filters[1]))
+                //console.log(objunpack(filters[i].filters[1]))
                 map.sqlc.push(objunpack(filters[i].filters[1]))
               }
             }
             map.sqlc = map.sqlc.toString()
-            console.log(map.sqlc)
-            console.log('##########[ CUT HERE ]#########')
+            //console.log(map.sqlc)
+            //console.log('##########[ CUT HERE ]#########')
           }
         }
         if (operation == 'update') {

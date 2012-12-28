@@ -7,7 +7,7 @@ BEGIN
     THEN
       SELECT id INTO tmp FROM category WHERE cat = catname;
       IF (NOT FOUND) THEN
-          INSERT INTO category (cat) VALUES(catname) RETURNING id INTO tmp;
+        INSERT INTO category (cat) VALUES (catname) RETURNING id INTO tmp;
       END IF;
   END IF;
   RETURN tmp;

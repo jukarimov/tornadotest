@@ -39,33 +39,39 @@ TABS = {
   'books': 'id,book,author,catid,published'.split(','),
   'category': 'id,cat'.split(',')
 }
+
 def parseSQL(sqlc):
   exp_column = True
   exp_operator = False
   exp_value = False
   exp_logic = False
+  cur_logic = ''
+  prev_logic = ''
   opr = ''
   SQL = 'SELECT b.*,c.cat FROM books b JOIN category c ON c.id = b.catid WHERE '
   for i in sqlc.split(','):
     if exp_column:
+      if cur_logic == '' or cur_logic != prev_opr:
+        SQL += '('
       if i in TABS['books']:
         SQL += 'b.' + i + ' '
       elif i in TABS['category']:
         SQL += 'c.' + i + ' '
       else:
-        print '*'*20
-        print 'INCORRECT SQL CODE', i, 'COL NOT FOUND'
-        print '*'*20
+       #print '*'*20
+       #print 'INCORRECT SQL CODE', i, 'COL NOT FOUND'
+       #print '*'*20
         return
       exp_column = False
       exp_operator = True
       continue
     elif exp_operator:
+      prev_opr = opr
       opr = sql_ops.get(i)
       if not opr:
-        print '*'*20
-        print 'INCORRECT SQL CODE', i
-        print '*'*20
+       #print '*'*20
+       #print 'INCORRECT SQL CODE', i
+       #print '*'*20
         return
       SQL += opr + ' '
       exp_operator = False
@@ -80,20 +86,24 @@ def parseSQL(sqlc):
         SQL += " '%%" + i + "' "
       else:
         SQL += "'" + i + "' "
+      SQL += ') '
       exp_value = False
       exp_logic = True
       continue
     elif exp_logic:
       if i not in sql_logops:
-        print '*'*20
-        print 'INCORRECT SQL CODE', i
-        print '*'*20
+       #print '*'*20
+       #print 'INCORRECT SQL CODE', i
+       #print '*'*20
         return
+      prev_logic = cur_logic
+      cur_logic = i
       SQL += i + ' '
       exp_logic = False
       exp_column = True
   SQL = re.sub('ilike_sw', 'ilike', SQL)
   SQL = re.sub('ilike_ew', 'ilike', SQL)
+  SQL = re.sub('\) or \(', ' or ', SQL)
   return SQL
 
 class DateEncoder(json.JSONEncoder):
@@ -129,7 +139,7 @@ class APINotes(RequestHandler):
     order   = self.get_argument('order', 'asc')
 
     if isempty(page) or isempty(rows):
-      print 'get: warning: no page or size specified'
+     #print 'get: warning: no page or size specified'
       cursor.execute('SELECT b.*,c.cat FROM books b JOIN category c ON b.catid = c.id')
     else:
       try:
@@ -137,11 +147,11 @@ class APINotes(RequestHandler):
         rows = abs(int(rows))
       except:
         self.write('Bad query')
-        print 'get: warning: Bad query', page, rows
+       #print 'get: warning: Bad query', page, rows
         return
       if page > sys.maxint or rows > sys.maxint:
         self.write('Bad query')
-        print 'get: warning: Bad query', page, rows
+       #print 'get: warning: Bad query', page, rows
         return
       if order not in [ 'asc', 'desc' ]:
         order = 'asc'
@@ -156,11 +166,11 @@ class APINotes(RequestHandler):
                           (page * rows),
                           rows))
       else:
-        print sqlc
-        print '-'*20, "PARSED SQL CODE", '-'*20
+       #print sqlc
+       #print '-'*20, "PARSED SQL CODE", '-'*20
         SQL = parseSQL(sqlc)
-        print SQL
-        print '-'*20, "CUT HERE", '-'*20
+       #print SQL
+       #print '-'*20, "CUT HERE", '-'*20
         cursor.execute(SQL + \
                        'ORDER BY %s ' + order + '   \
                         OFFSET %s                   \
@@ -171,9 +181,9 @@ class APINotes(RequestHandler):
 
     records = cursor.fetchall()
     records = json.loads(json.dumps(records, cls=DateEncoder))
-    print '-'*20, "ROWS", '-'*20
-    print 'GET:', records
-    print '-'*20, "END ROWS", '-'*20
+   #print '-'*20, "ROWS", '-'*20
+   #print 'GET:', records
+   #print '-'*20, "END ROWS", '-'*20
     cursor.execute('SELECT COUNT(id) FROM books')
     total_rows = cursor.fetchall()[0]['count']
     cursor.close()
@@ -189,19 +199,19 @@ class APINotes(RequestHandler):
     published = self.get_argument('published', None)
 
     if isempty(book):
-      print 'post: warning: empty bookname'
+     #print 'post: warning: empty bookname'
       return
     if isempty(author):
-      print 'post: warning: empty author'
+     #print 'post: warning: empty author'
       return
     if isempty(cat):
-      print 'post: warning: empty category'
+     #print 'post: warning: empty category'
       return
     if isempty(published):
-      print 'post: warning: empty published'
+     #print 'post: warning: empty published'
       return
 
-    print 'POST:', book, author, cat, published
+   #print 'POST:', book, author, cat, published
 
     conn   = self.db
     cursor = conn.cursor()
@@ -221,22 +231,22 @@ class APINotes(RequestHandler):
     conn      = self.db
     cursor    = conn.cursor()
 
-    print 'PUT:', rowid, book, author, cat, published
+   #print 'PUT:', rowid, book, author, cat, published
 
     if isempty(rowid):
-      print 'post: warning: empty rowid'
+     #print 'post: warning: empty rowid'
       return
     if isempty(book):
-      print 'post: warning: empty bookname'
+     #print 'post: warning: empty bookname'
       return
     if isempty(author):
-      print 'post: warning: empty author'
+     #print 'post: warning: empty author'
       return
     if isempty(cat):
-      print 'post: warning: empty category'
+     #print 'post: warning: empty category'
       return
     if isempty(published):
-      print 'post: warning: empty published'
+     #print 'post: warning: empty published'
       return
 
     cursor.execute("SELECT * FROM updbook \
@@ -250,7 +260,7 @@ class APINotes(RequestHandler):
   def delete(self, rid=None):
 
     if not rid or rid == '':
-      print 'delete: warning: empty id'
+     #print 'delete: warning: empty id'
       return
 
     conn   = self.db

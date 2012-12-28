@@ -16,4 +16,3 @@ CREATE TABLE category (
 );
 GRANT ALL ON category TO pguser;
 GRANT USAGE, SELECT ON SEQUENCE category_id_seq TO pguser;
-

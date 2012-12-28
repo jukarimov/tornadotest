@@ -23,7 +23,7 @@
      <thead>
        <tr>
          <th data-options="field:'id',width:30,sortable:true,">ID</th>
-         <th data-options="field:'name',width:100,sortable:true,
+         <th data-options="field:'book',width:100,sortable:true,
            editor:{
              type:'validatebox',
              options:{
@@ -53,6 +53,16 @@
                required:true
              }
            }">Published</th>
+         <th data-options="field:'cat',width:80,editor:'text',sortable:true,
+           editor:{
+             type:'validatebox',
+             options:{
+               valueField:'name',
+               textField:'name',
+               data:'author',
+               required:true
+             }
+           }">Category</th>
        </tr>
      </thead>
    </table>
