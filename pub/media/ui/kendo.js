@@ -1,3 +1,4 @@
+var _grid = null;
 $(document).ready(function (){
   dataSource = new kendo.data.DataSource({
     pageSize: 10,
@@ -53,18 +54,20 @@ $(document).ready(function (){
               if (filters[i].field) {
                 //console.log(i)
                 if (i > 0 && map.sqlc[map.sqlc.length - 1] != 'and' && map.sqlc[map.sqlc.length - 1] != 'or') {
-                  //console.log(map.filt.logic)
+                  console.log(map.filt.logic)
                   map.sqlc.push(map.filt.logic)
                 }
                 //console.log(objunpack(filters[i]))
                 map.sqlc.push(objunpack(filters[i]))
                 if (i < filters.length-1) {
                   //console.log(objunpack(map.filt.logic))
-                  map.sqlc.push(objunpack(map.filt.logic))
+                  map.sqlc.push(map.filt.logic)
                 }
               } else {
-                if (map.sqlc.length > 0) {
-                  map.sqlc.push(objunpack(map.filt.logic))
+																var maplen = map.sqlc.length
+                if (maplen > 0 && map.sqlc[maplen - 1] != 'and' && map.sqlc[maplen - 1] != 'or') {
+                  console.log(map.filt.logic)
+                  map.sqlc.push(map.filt.logic)
                 }
                 //console.log(objunpack(filters[i].filters[0]))
                 map.sqlc.push(objunpack(filters[i].filters[0]))
@@ -131,7 +134,7 @@ $(document).ready(function (){
     },
   })
 
-  $("#grid").kendoGrid({
+  _grid = $("#grid").kendoGrid({
     dataSource: dataSource,
     navigatable: true,
     pageable: true,
@@ -151,7 +154,7 @@ $(document).ready(function (){
       { field: "cat", title: "Category", width: 100 },
       { command: ["edit", "destroy"], title: "&nbsp;", width: 110 },
     ],
-  })
+  }).data("kendoGrid");
 })
 $(window).resize(function(){
   var height = $(window).height()
