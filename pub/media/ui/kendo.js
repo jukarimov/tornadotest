@@ -53,8 +53,9 @@ $(document).ready(function (){
             for (i in filters) {
               if (filters[i].field) {
                 //console.log(i)
-                if (i > 0 && map.sqlc[map.sqlc.length - 1] != 'and' && map.sqlc[map.sqlc.length - 1] != 'or') {
-                  console.log(map.filt.logic)
+                var maplen = map.sqlc.length
+                if (i > 0 && map.sqlc[maplen - 1] != 'and' && map.sqlc[maplen - 1] != 'or') {
+                  //console.log(map.filt.logic)
                   map.sqlc.push(map.filt.logic)
                 }
                 //console.log(objunpack(filters[i]))
@@ -64,9 +65,9 @@ $(document).ready(function (){
                   map.sqlc.push(map.filt.logic)
                 }
               } else {
-																var maplen = map.sqlc.length
+                var maplen = map.sqlc.length
                 if (maplen > 0 && map.sqlc[maplen - 1] != 'and' && map.sqlc[maplen - 1] != 'or') {
-                  console.log(map.filt.logic)
+                  //console.log(map.filt.logic)
                   map.sqlc.push(map.filt.logic)
                 }
                 //console.log(objunpack(filters[i].filters[0]))
