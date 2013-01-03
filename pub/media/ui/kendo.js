@@ -1,6 +1,5 @@
-var _grid = null;
 $(document).ready(function (){
-  dataSource = new kendo.data.DataSource({
+  var dataSource = new kendo.data.DataSource({
     pageSize: 10,
     serverPaging: true,
     serverSorting: true,
@@ -48,39 +47,28 @@ $(document).ready(function (){
           }
           if (map.filt) {
             var filters = map.filt.filters
-            //console.log('##########[ BEGIN ]#########')
             var f1 = 0;
             for (i in filters) {
               if (filters[i].field) {
-                //console.log(i)
                 var maplen = map.sqlc.length
                 if (i > 0 && map.sqlc[maplen - 1] != 'and' && map.sqlc[maplen - 1] != 'or') {
-                  //console.log(map.filt.logic)
                   map.sqlc.push(map.filt.logic)
                 }
-                //console.log(objunpack(filters[i]))
                 map.sqlc.push(objunpack(filters[i]))
                 if (i < filters.length-1) {
-                  //console.log(objunpack(map.filt.logic))
                   map.sqlc.push(map.filt.logic)
                 }
               } else {
                 var maplen = map.sqlc.length
                 if (maplen > 0 && map.sqlc[maplen - 1] != 'and' && map.sqlc[maplen - 1] != 'or') {
-                  //console.log(map.filt.logic)
                   map.sqlc.push(map.filt.logic)
                 }
-                //console.log(objunpack(filters[i].filters[0]))
                 map.sqlc.push(objunpack(filters[i].filters[0]))
-                //console.log(objunpack(filters[i].logic))
                 map.sqlc.push(objunpack(filters[i].logic))
-                //console.log(objunpack(filters[i].filters[1]))
                 map.sqlc.push(objunpack(filters[i].filters[1]))
               }
             }
             map.sqlc = map.sqlc.toString()
-            //console.log(map.sqlc)
-            //console.log('##########[ CUT HERE ]#########')
           }
         }
         if (operation == 'update') {
@@ -110,7 +98,7 @@ $(document).ready(function (){
             type: "number",
             editable: false,
           },
-          book: {
+          name: {
             type: "string",
             editable: true,
             validation: { required: true }
@@ -120,7 +108,7 @@ $(document).ready(function (){
             editable: true,
             validation: { required: true }
           },
-          cat: {
+          category: {
             type: "string",
             editable: true,
             validation: { required: true }
@@ -135,7 +123,7 @@ $(document).ready(function (){
     },
   })
 
-  _grid = $("#grid").kendoGrid({
+  $("#grid").kendoGrid({
     dataSource: dataSource,
     navigatable: true,
     pageable: true,
@@ -149,13 +137,68 @@ $(document).ready(function (){
     ],
     columns: [
       { field: "id", title: "ID", width: 50 },
-      { field: "book", title: "Book", width: 150 },
+      { field: "name", title: "Name", width: 150 },
       { field: "author", title: "Author", width: 100 },
       { field: "published", title: "Published", format: "{0:MM-dd-yyyy}", width: 80 },
-      { field: "cat", title: "Category", width: 100 },
+      { field: "category", title: "Category", width: 100, editor: categoryDropDownEditor },
       { command: ["edit", "destroy"], title: "&nbsp;", width: 110 },
     ],
-  }).data("kendoGrid");
+  })
+  $("#category_list").kendoDropDownList({
+    dataTextField: "name",
+    dataValueField: "name",
+    dataSource: {
+          transport: {
+            read: {
+              url: '/api/notes/cats',
+              dataType: 'json',
+              type: 'GET',
+            },
+          },
+          schema: {
+            data: function(reply) { 
+              return reply.rows
+            },
+          },
+    },
+    change: function() {
+      val = $("#category_list").val();
+      var grid = $("#grid").data().kendoGrid;
+      grid.dataSource.filter({
+        "filters":[{"field":"category","operator":"eq","value":val}]
+      })
+    },
+    open: function() {
+      var kd = $("#category_list").data().kendoDropDownList
+      kd.dataSource.transport.read();
+      console.log("reading")
+    }
+  })
+  function categoryDropDownEditor(contrainer, options) {
+    console.log(options)
+    $('<input data-text-field="name" data-value-field="name" data-bind="value:' + options.field + '"/>"')
+      .appendTo(contrainer)
+      .kendoComboBox({
+        index: 0,
+        placeholder: "Select category",
+        dataTextField: "name",
+        dataValueField: "name",
+        dataSource: {
+          transport: {
+            read: {
+              url: '/api/notes/cats',
+              dataType: 'json',
+              type: 'GET',
+            },
+          },
+          schema: {
+            data: function(reply) {
+              return reply.rows
+            },
+          }
+        }
+      })
+  }
 })
 $(window).resize(function(){
   var height = $(window).height()

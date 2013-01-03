@@ -37,10 +37,6 @@ sql_ops = {
     'endswith'        :'ilike_ew',
 }
 sql_logops = ['and','or']
-TABS = {
-  'books': 'id,book,author,catid,published'.split(','),
-  'category': 'id,cat'.split(',')
-}
 
 def parseSQL(sqlc):
   exp_column = True
@@ -50,15 +46,12 @@ def parseSQL(sqlc):
   cur_logic = ''
   prev_logic = ''
   opr = ''
-  SQL = 'SELECT b.*,c.cat FROM books b JOIN category c ON c.id = b.catid WHERE '
+  SQL = 'SELECT * FROM api.book_list() WHERE '
   for i in sqlc.split(','):
     if exp_column:
       if cur_logic == '' or cur_logic != prev_opr:
         SQL += '('
-      if i in TABS['books']:
-        SQL += 'b.' + i + ' '
-      elif i in TABS['category']:
-        SQL += 'c.' + i + ' '
+        SQL += ' ' + i + ' '
       else:
         #print '*'*20
         #print 'INCORRECT SQL CODE', i, 'COL NOT FOUND'
@@ -122,6 +115,19 @@ class Main(RequestHandler):
     ui = self.get_argument('ui', 'main')
     self.render('%s.html' % ui, ui = ui)
 
+class list_categories(RequestHandler):
+  @property
+  def db(self):
+    return connect("user='pguser' host='localhost' dbname='pgdb' password='pgpass'")
+  def get(self):
+    conn    = self.db
+    cursor  = conn.cursor(cursor_factory=RealDictCursor)
+    cursor.execute('select name from schemas.category')
+    records = cursor.fetchall()
+    self.write({
+      'rows': records  
+    })
+
 class APINotes(RequestHandler):
   @property
   def db(self):
@@ -129,11 +135,11 @@ class APINotes(RequestHandler):
 
   def get(self, rid=None):
     sort_map = {
-      'id': 1,
-      'book': 2,
-      'author': 3,
-      'cat': 4,
-      'published': 5,
+      'id'       :1,
+      'published':2,
+      'category' :3,
+      'author'   :4,
+      'name'     :5,
     }
     conn    = self.db
     cursor  = conn.cursor(cursor_factory=RealDictCursor)
@@ -145,7 +151,8 @@ class APINotes(RequestHandler):
 
     if isempty(page) or isempty(rows):
       #print 'get: warning: no page or size specified'
-      cursor.execute('SELECT b.*,c.cat FROM books b JOIN category c ON b.catid = c.id')
+      cursor.execute('SELECT *  FROM api.book_list()')
+
     else:
       try:
         page = abs(int(page) - 1)
@@ -161,9 +168,7 @@ class APINotes(RequestHandler):
       if order not in [ 'asc', 'desc' ]:
         order = 'asc'
       if isempty(sqlc):
-        cursor.execute('SELECT b.*, c.cat                \
-                        FROM books b JOIN category c     \
-                        ON b.catid = c.id                \
+        cursor.execute('SELECT * FROM api.book_list()         \
                         ORDER BY %s ' + order + '        \
                         OFFSET %s                        \
                         LIMIT %s',
@@ -189,7 +194,7 @@ class APINotes(RequestHandler):
     #print '-'*20, "ROWS", '-'*20
     #print 'GET:', records
     #print '-'*20, "END ROWS", '-'*20
-    cursor.execute('SELECT COUNT(id) FROM books')
+    cursor.execute('SELECT COUNT(id) FROM schemas.book')
     total_rows = cursor.fetchall()[0]['count']
     cursor.close()
     self.write({
@@ -198,18 +203,18 @@ class APINotes(RequestHandler):
     })
 
   def post(self, rid = None):
-    book      = self.get_argument('book', None)
+    name      = self.get_argument('name', None)
     author    = self.get_argument('author', None)
-    cat       = self.get_argument('cat', None)
+    category  = self.get_argument('category', None)
     published = self.get_argument('published', None)
 
-    if isempty(book):
+    if isempty(name):
       #print 'post: warning: empty bookname'
       return
     if isempty(author):
       #print 'post: warning: empty author'
       return
-    if isempty(cat):
+    if isempty(category):
       #print 'post: warning: empty category'
       return
     if isempty(published):
@@ -220,17 +225,15 @@ class APINotes(RequestHandler):
 
     conn   = self.db
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM addbook \
-                      (%s,%s,%s,%s)",
-                    (book,author,
-                    cat,published))
+    cursor.execute("SELECT * FROM api.book_add(%s, %s, %s, %s)",
+                    (published, category, author, name))
     conn.commit()
     conn.close()
 
   def put(self, rid=None):
-    book      = self.get_argument('book')
+    name      = self.get_argument('name')
     author    = self.get_argument('author')
-    cat       = self.get_argument('cat', None)
+    category  = self.get_argument('category', None)
     published = self.get_argument('published', None)
     rowid     = self.get_argument('id')
     conn      = self.db
@@ -241,24 +244,25 @@ class APINotes(RequestHandler):
     if isempty(rowid):
       #print 'post: warning: empty rowid'
       return
-    if isempty(book):
+    if isempty(name):
       #print 'post: warning: empty bookname'
       return
     if isempty(author):
       #print 'post: warning: empty author'
       return
-    if isempty(cat):
+    if isempty(category):
       #print 'post: warning: empty category'
       return
     if isempty(published):
       #print 'post: warning: empty published'
       return
 
-    cursor.execute("SELECT * FROM updbook \
-                      (%s,%s,%s,%s,%s)",
-                    (rowid,book,
-                    author,cat,
-                    published))
+    cursor.execute("SELECT * FROM api.book_update \
+                    (%s, %s, %s, %s, %s)",
+                    (rowid,    published,
+                     category, author,
+                     name
+                    ))
     conn.commit()
     conn.close()
 
@@ -270,12 +274,13 @@ class APINotes(RequestHandler):
 
     conn   = self.db
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM books WHERE id = %s", (rid,))
+    cursor.execute("DELETE FROM schemas.book WHERE id = %s", (rid,))
     conn.commit()
     conn.close()
 
 routes = [
   (r'/', Main),
+  (r'/api/notes/cats', list_categories),
   (r'/api/notes/([^/]+)?/?', APINotes),
 ]
 
