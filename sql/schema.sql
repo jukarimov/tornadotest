@@ -1,3 +1,4 @@
+DROP   VIEW   api.book_list;
 DROP   TABLE  schemas.book;
 DROP   TABLE  schemas.category;
 DROP   SCHEMA schemas CASCADE; 
@@ -103,16 +104,9 @@ END;
 $$
 LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION api.book_list()
-RETURNS TABLE (
-  id         BIGINT,
-  published  DATE,
-  category   VARCHAR,
-  author     VARCHAR,
-  name       VARCHAR
-) AS $$
-BEGIN
-  RETURN QUERY SELECT
+CREATE OR REPLACE VIEW api.book_list
+AS
+  SELECT
     b.id,
     b.published,
     c.name AS category,
@@ -124,10 +118,8 @@ BEGIN
     schemas.category AS c
   ON
     c.id = b.category_id;
-END;
-$$
-LANGUAGE plpgsql;
 
+GRANT SELECT ON api.book_list    TO pguser;
 GRANT USAGE  ON SCHEMA schemas   TO pguser;
 GRANT USAGE  ON SCHEMA api       TO pguser;
 GRANT ALL    ON schemas.book     TO pguser;

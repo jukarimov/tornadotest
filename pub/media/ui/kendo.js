@@ -47,7 +47,6 @@ $(document).ready(function (){
           }
           if (map.filt) {
             var filters = map.filt.filters
-            var f1 = 0;
             for (i in filters) {
               if (filters[i].field) {
                 var maplen = map.sqlc.length
@@ -66,6 +65,12 @@ $(document).ready(function (){
                 map.sqlc.push(objunpack(filters[i].filters[0]))
                 map.sqlc.push(objunpack(filters[i].logic))
                 map.sqlc.push(objunpack(filters[i].filters[1]))
+              }
+              f = filters[i]
+              if (!f.value || !f.field || !f.operator) {
+                alert('Bad filter:' + map.sqlc)
+                map.sqlc = [];
+                return map;
               }
             }
             map.sqlc = map.sqlc.toString()
@@ -108,16 +113,16 @@ $(document).ready(function (){
             editable: true,
             validation: { required: true }
           },
+          published: {
+            type: "date",
+            editable: true,
+            validation: { required: true }
+          },
           category: {
             type: "string",
             editable: true,
             validation: { required: true }
           },
-          published: {
-            type: "date",
-            editable: true,
-            validation: { required: true }
-          }
         },
       },
     },
@@ -133,18 +138,19 @@ $(document).ready(function (){
     filterable: true,
     scrollable: true,
     toolbar: [
-      { name: "create", text: "Add" }, 
+      { name: "create", text: "Add" },
     ],
     columns: [
       { field: "id", title: "ID", width: 50 },
       { field: "name", title: "Name", width: 150 },
       { field: "author", title: "Author", width: 100 },
-      { field: "published", title: "Published", format: "{0:MM-dd-yyyy}", width: 80 },
+      { field: "published", title: "Published", format: "{0:MMMM yyyy}", width: 80 },
       { field: "category", title: "Category", width: 100, editor: categoryDropDownEditor },
       { command: ["edit", "destroy"], title: "&nbsp;", width: 110 },
     ],
   })
   $("#category_list").kendoDropDownList({
+    placeholder: "Select category",
     dataTextField: "name",
     dataValueField: "name",
     dataSource: {

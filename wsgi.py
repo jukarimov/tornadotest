@@ -38,6 +38,8 @@ sql_ops = {
 }
 sql_logops = ['and','or']
 
+book_list_columns = ['id', 'published', 'category', 'author', 'name']
+
 def parseSQL(sqlc):
   exp_column = True
   exp_operator = False
@@ -46,17 +48,22 @@ def parseSQL(sqlc):
   cur_logic = ''
   prev_logic = ''
   opr = ''
-  SQL = 'SELECT * FROM api.book_list() WHERE '
+  SQL = 'SELECT * FROM api.book_list WHERE '
   for i in sqlc.split(','):
     if exp_column:
       if cur_logic == '' or cur_logic != prev_opr:
         SQL += '('
         SQL += ' ' + i + ' '
+        if i not in book_list_columns:
+          print '*'*20
+          print 'INCORRECT SQL CODE', i, 'COL NOT FOUND'
+          print '*'*20
+          return None
       else:
-        #print '*'*20
-        #print 'INCORRECT SQL CODE', i, 'COL NOT FOUND'
-        #print '*'*20
-        return
+        print '*'*20
+        print 'INCORRECT SQL CODE', i, 'COL NOT FOUND'
+        print '*'*20
+        return None
       exp_column = False
       exp_operator = True
       continue
@@ -64,10 +71,10 @@ def parseSQL(sqlc):
       prev_opr = opr
       opr = sql_ops.get(i)
       if not opr:
-        #print '*'*20
-        #print 'INCORRECT SQL CODE', i
-        #print '*'*20
-        return
+        print '*'*20
+        print 'INCORRECT SQL CODE', i
+        print '*'*20
+        return None
       SQL += opr + ' '
       exp_operator = False
       exp_value = True
@@ -89,10 +96,10 @@ def parseSQL(sqlc):
       continue
     elif exp_logic:
       if i not in sql_logops:
-        #print '*'*20
-        #print 'INCORRECT SQL CODE', i
-        #print '*'*20
-        return
+        print '*'*20
+        print 'INCORRECT SQL CODE', i
+        print '*'*20
+        return None
       prev_logic = cur_logic
       cur_logic = i
       SQL += i + ' '
@@ -112,8 +119,12 @@ class DateEncoder(json.JSONEncoder):
 
 class Main(RequestHandler):
   def get(self):
-    ui = self.get_argument('ui', 'main')
-    self.render('%s.html' % ui, ui = ui)
+    is_authorized = True
+    if is_authorized:
+      ui = self.get_argument('ui', 'main')
+      self.render('%s.html' % ui, ui = ui)
+    else:
+      self.render('auth.html')
 
 class list_categories(RequestHandler):
   @property
@@ -122,10 +133,10 @@ class list_categories(RequestHandler):
   def get(self):
     conn    = self.db
     cursor  = conn.cursor(cursor_factory=RealDictCursor)
-    cursor.execute('select name from schemas.category')
+    cursor.execute('select name from schemas.category LIMIT 20')
     records = cursor.fetchall()
     self.write({
-      'rows': records  
+      'rows': records
     })
 
 class APINotes(RequestHandler):
@@ -151,7 +162,7 @@ class APINotes(RequestHandler):
 
     if isempty(page) or isempty(rows):
       #print 'get: warning: no page or size specified'
-      cursor.execute('SELECT *  FROM api.book_list()')
+      cursor.execute('SELECT * FROM api.book_list')
 
     else:
       try:
@@ -168,9 +179,9 @@ class APINotes(RequestHandler):
       if order not in [ 'asc', 'desc' ]:
         order = 'asc'
       if isempty(sqlc):
-        cursor.execute('SELECT * FROM api.book_list()         \
-                        ORDER BY %s ' + order + '        \
-                        OFFSET %s                        \
+        cursor.execute('SELECT * FROM api.book_list \
+                        ORDER BY %s ' + order + '   \
+                        OFFSET %s                   \
                         LIMIT %s',
                         (sort_map.get(sort,1),
                           (page * rows),
@@ -179,11 +190,14 @@ class APINotes(RequestHandler):
         #print sqlc
         #print '-'*20, "PARSED SQL CODE", '-'*20
         SQL = parseSQL(sqlc)
+        if not SQL:
+          print 'Error parsing SQL'
+          return
         #print SQL
         #print '-'*20, "CUT HERE", '-'*20
         cursor.execute(SQL + \
-                       'ORDER BY %s ' + order + '   \
-                        OFFSET %s                   \
+                       'ORDER BY %s ' + order + ' \
+                        OFFSET %s                 \
                         LIMIT %s',
                         (sort_map.get(sort,1),
                           (page * rows),
