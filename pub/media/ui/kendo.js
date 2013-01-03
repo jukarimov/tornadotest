@@ -169,13 +169,10 @@ $(document).ready(function (){
       })
     },
     open: function() {
-      var kd = $("#category_list").data().kendoDropDownList
-      kd.dataSource.transport.read();
-      console.log("reading")
+      $("#category_list").data("kendoDropDownList").dataSource.read()
     }
   })
   function categoryDropDownEditor(contrainer, options) {
-    console.log(options)
     $('<input data-text-field="name" data-value-field="name" data-bind="value:' + options.field + '"/>"')
       .appendTo(contrainer)
       .kendoComboBox({
