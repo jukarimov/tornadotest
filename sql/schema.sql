@@ -1,11 +1,11 @@
-DROP   VIEW   api.book_list;
-DROP   TABLE  schemas.book;
-DROP   TABLE  schemas.category;
-DROP   SCHEMA schemas CASCADE; 
+DROP   VIEW   IF EXISTS api.book_list;
+DROP   TABLE  IF EXISTS schemas.book;
+DROP   TABLE  IF EXISTS schemas.category;
+DROP   SCHEMA IF EXISTS schemas; 
 CREATE SCHEMA schemas; 
 
 CREATE TABLE schemas.book (
-  id          BIGSERIAL NOT NULL PRIMARY KEY,
+  id          BIGSERIAL PRIMARY KEY,
   published   DATE      NOT NULL,
   category_id BIGINT    NOT NULL,
   author      VARCHAR   NOT NULL,
@@ -14,13 +14,13 @@ CREATE TABLE schemas.book (
 );
 
 CREATE TABLE schemas.category (
-  id          BIGSERIAL NOT NULL PRIMARY KEY,
+  id          BIGSERIAL PRIMARY KEY,
   name        VARCHAR   NOT NULL,
   UNIQUE(name)
 );
 
-DROP   SCHEMA   api CASCADE;
-CREATE SCHEMA   api; 
+DROP   SCHEMA IF EXISTS api CASCADE;
+CREATE SCHEMA api; 
 
 CREATE OR REPLACE FUNCTION api.category_add(
   in_name VARCHAR
@@ -104,7 +104,7 @@ END;
 $$
 LANGUAGE plpgsql;
 
-CREATE OR REPLACE VIEW api.book_list
+CREATE VIEW api.book_list
 AS
   SELECT
     b.id,
@@ -118,6 +118,18 @@ AS
     schemas.category AS c
   ON
     c.id = b.category_id;
+
+CREATE OR REPLACE FUNCTION api.category_clean()
+RETURNS BIGINT
+AS $$
+DECLARE
+  rowcount BIGINT;
+BEGIN
+  DELETE FROM schemas.category WHERE name NOT IN (SELECT category FROM api.book_list);
+  GET DIAGNOSTICS rowcount = ROW_COUNT;
+  RETURN rowcount;
+END;
+$$ LANGUAGE plpgsql;
 
 GRANT SELECT ON api.book_list    TO pguser;
 GRANT USAGE  ON SCHEMA schemas   TO pguser;

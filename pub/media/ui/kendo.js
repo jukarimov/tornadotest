@@ -150,9 +150,8 @@ $(document).ready(function (){
     ],
   })
   $("#category_list").kendoDropDownList({
-    placeholder: "Select category",
-    dataTextField: "name",
-    dataValueField: "name",
+    dataTextField: "category",
+    dataValueField: "category",
     dataSource: {
           transport: {
             read: {
@@ -179,13 +178,13 @@ $(document).ready(function (){
     }
   })
   function categoryDropDownEditor(contrainer, options) {
-    $('<input data-text-field="name" data-value-field="name" data-bind="value:' + options.field + '"/>"')
+    $('<input data-text-field="category" data-value-field="category" data-bind="value:' + options.field + '"/>"')
       .appendTo(contrainer)
       .kendoComboBox({
         index: 0,
         placeholder: "Select category",
-        dataTextField: "name",
-        dataValueField: "name",
+        dataTextField: "category",
+        dataValueField: "category",
         dataSource: {
           transport: {
             read: {
