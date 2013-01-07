@@ -161,7 +161,7 @@ class APINotes(RequestHandler):
     order   = self.get_argument('order', 'asc')
 
     if isempty(page) or isempty(rows):
-      #print 'get: warning: no page or size specified'
+      print 'get: warning: no page or size specified'
       cursor.execute('SELECT * FROM api.book_list')
 
     else:
@@ -170,11 +170,11 @@ class APINotes(RequestHandler):
         rows = abs(int(rows))
       except:
         self.write('Bad query')
-        #print 'get: warning: Bad query', page, rows
+        print 'get: warning: Bad query', page, rows
         return
       if page > sys.maxint or rows > sys.maxint:
         self.write('Bad query')
-        #print 'get: warning: Bad query', page, rows
+        print 'get: warning: Bad query', page, rows
         return
       if order not in [ 'asc', 'desc' ]:
         order = 'asc'
@@ -187,14 +187,14 @@ class APINotes(RequestHandler):
                           (page * rows),
                           rows))
       else:
-        #print sqlc
-        #print '-'*20, "PARSED SQL CODE", '-'*20
+        print sqlc
+        print '-'*20, "PARSED SQL CODE", '-'*20
         SQL = parseSQL(sqlc)
         if not SQL:
           print 'Error parsing SQL'
           return
-        #print SQL
-        #print '-'*20, "CUT HERE", '-'*20
+        print SQL
+        print '-'*20, "CUT HERE", '-'*20
         cursor.execute(SQL + \
                        'ORDER BY %s ' + order + ' \
                         OFFSET %s                 \
@@ -205,9 +205,9 @@ class APINotes(RequestHandler):
 
     records = cursor.fetchall()
     records = json.loads(json.dumps(records, cls=DateEncoder))
-    #print '-'*20, "ROWS", '-'*20
-    #print 'GET:', records
-    #print '-'*20, "END ROWS", '-'*20
+    print '-'*20, "ROWS", '-'*20
+    print 'GET:', records
+    print '-'*20, "END ROWS", '-'*20
     cursor.execute('SELECT COUNT(id) FROM schemas.book')
     total_rows = cursor.fetchall()[0]['count']
     cursor.close()
@@ -223,27 +223,27 @@ class APINotes(RequestHandler):
     name      = self.get_argument('name', None)
 
     if isempty(name):
-      #print 'post: warning: empty bookname'
+      print 'post: warning: empty bookname'
       return
     if isempty(author):
-      #print 'post: warning: empty author'
+      print 'post: warning: empty author'
       return
     if isempty(category):
-      #print 'post: warning: empty category'
+      print 'post: warning: empty category'
       return
     if isempty(published):
-      #print 'post: warning: empty published'
+      print 'post: warning: empty published'
       return
 
-    #print 'POST:', book, author, cat, published
+    print 'POST:', category, published, author, name
 
     conn   = self.db
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM api.book_add(%s, %s, %s, %s)",
-                    (category,
-                     published,
-                     author,
-                     name))
+                                              (category,
+                                               published,
+                                               author,
+                                               name))
     conn.commit()
     conn.close()
 
@@ -256,22 +256,22 @@ class APINotes(RequestHandler):
     conn      = self.db
     cursor    = conn.cursor()
 
-    #print 'PUT:', rowid, book, author, cat, published
+    print 'PUT:', rowid, category, published, author, name
 
     if isempty(rowid):
-      #print 'post: warning: empty rowid'
+      print 'put: warning: empty rowid'
       return
     if isempty(name):
-      #print 'post: warning: empty bookname'
+      print 'put: warning: empty bookname'
       return
     if isempty(author):
-      #print 'post: warning: empty author'
+      print 'put: warning: empty author'
       return
     if isempty(category):
-      #print 'post: warning: empty category'
+      print 'put: warning: empty category'
       return
     if isempty(published):
-      #print 'post: warning: empty published'
+      print 'put: warning: empty published'
       return
 
     cursor.execute("SELECT * FROM api.book_update \
@@ -287,8 +287,8 @@ class APINotes(RequestHandler):
 
   def delete(self, rid=None):
 
-    if not rid or rid == '':
-      #print 'delete: warning: empty id'
+    if isempty(rid):
+      print 'delete: warning: empty id'
       return
 
     conn   = self.db

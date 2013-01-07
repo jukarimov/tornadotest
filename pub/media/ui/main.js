@@ -21,6 +21,10 @@ $(function(){
     fitColumns:true,
     onBeforeLoad: function() { $(this).datagrid('rejectChanges'); },
     onDblClickRow: function(rowIndex){
+      // update icon
+      lb = $('#btn_upd').linkbutton();
+      lb.data().linkbutton.options.iconCls = 'icon-edit';
+      $('#btn_upd').linkbutton();
       if (lastIndex != rowIndex){
         $('#tt').datagrid('endEdit', lastIndex);
         $('#tt').datagrid('beginEdit', rowIndex);
@@ -31,28 +35,44 @@ $(function(){
   $('#btn_add').click(function(){
     tbl.datagrid('endEdit', lastIndex);
     tbl.datagrid('appendRow',{
-      name        :'book title',
-      author      :'book\'s author',
-      published   :'12-13-2000',
-      category    :'book category',
+      name        : 'book title',
+      author      : 'book\'s author',
+      published   : '12-13-2000',
+      category    : 'book category',
     });
     lastIndex = tbl.datagrid('getRows').length - 1;
     tbl.datagrid('selectRow', lastIndex);
     tbl.datagrid('beginEdit', lastIndex);
+    // update icon
+    lb = $('#btn_upd').linkbutton();
+    lb.data().linkbutton.options.iconCls = 'icon-edit';
+    $('#btn_upd').linkbutton();
   });
   $('#btn_upd').click(function(){
     tbl.datagrid('endEdit', lastIndex);
+    // update icon
+    lb = $('#btn_upd').linkbutton();
+    lb.data().linkbutton.options.iconCls = 'icon-edit';
+    $('#btn_upd').linkbutton();
     var row = tbl.datagrid('getSelected');
     if (row) {
       var this_index = tbl.datagrid('getRowIndex', row);
       if (this_index == lastIndex && !lastEdit) {
         tbl.datagrid('endEdit', this_index);
         lastEdit = 1;
+        // update icon
+        lb = $('#btn_upd').linkbutton();
+        lb.data().linkbutton.options.iconCls = 'icon-ok';
+        $('#btn_upd').linkbutton();
         return;
       }
       lastIndex = tbl.datagrid('getRowIndex', row);
       tbl.datagrid('beginEdit', lastIndex);
       lastEdit = 0;
+      // update icon
+      lb = $('#btn_upd').linkbutton();
+      lb.data().linkbutton.options.iconCls = 'icon-edit';
+      $('#btn_upd').linkbutton();
     }
   });
   $('#btn_del').click(function(){
@@ -68,7 +88,11 @@ $(function(){
     }
   });
   $('#btn_cancel').click(function(){
-    tbl.datagrid('rejectChanges');
+    $.messager.confirm('Confirm','Are you sure you want to discard changes?', function(r){
+      if (r) {
+        tbl.datagrid('rejectChanges');
+      }
+    });
   });
   $('#btn_save').click(function(){
     var add_records = tbl.datagrid('getChanges', 'inserted');
@@ -83,6 +107,12 @@ $(function(){
           'author'     :row.author,
           'published'  :row.published,
           'category'   :row.category,
+        },
+        success: function(response) {
+          popup('Saved', 0);
+        },
+        error: function(response) {
+          popup('err', true)
         }
       });
     });
@@ -95,6 +125,12 @@ $(function(){
           'author'     :row.author,
           'published'  :row.published,
           'category'   :row.category
+        },
+        success: function(response) {
+          popup('Updated', 0);
+        },
+        error: function(response) {
+          popup('err', true)
         }
       });
     });
@@ -103,6 +139,18 @@ $(function(){
     });
   });
 });
+function popup(text, err) {
+  if (err) {
+    $.messager.alert('Error!','Data transport failed!','error');
+  } else {
+    $.messager.show({
+      title:    'Success',
+      msg:      text,
+      timeout:  3000,
+      showType: 'slide'
+    });
+  }
+}
 $(window).resize(function(){
   var height = $(window).height();
   $('#tt').datagrid('resize', { height: height-30 } )

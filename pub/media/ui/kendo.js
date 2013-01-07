@@ -68,7 +68,7 @@ $(document).ready(function (){
               }
               f = filters[i]
               if (!f.value || !f.field || !f.operator) {
-                alert('Bad filter:' + map.sqlc)
+                alert('Bad filter value:' + map.sqlc)
                 map.sqlc = [];
                 return map;
               }
@@ -100,27 +100,27 @@ $(document).ready(function (){
         id: "id",
         fields: {
           id: {
-            type: "number",
-            editable: false,
+            type:       "number",
+            editable:   false,
           },
           category: {
-            type: "string",
-            editable: true,
+            type:       "string",
+            editable:   true,
             validation: { required: true }
           },
           published: {
-            type: "date",
-            editable: true,
+            type:       "date",
+            editable:   true,
             validation: { required: true }
           },
           author: {
-            type: "string",
-            editable: true,
+            type:       "string",
+            editable:   true,
             validation: { required: true }
           },
           name: {
-            type: "string",
-            editable: true,
+            type:       "string",
+            editable:   true,
             validation: { required: true }
           },
         },
@@ -142,11 +142,11 @@ $(document).ready(function (){
     ],
     columns: [
       { field: "id", title: "ID", width: 50 },
-      { field: "category", title: "Category", width: 100, editor: categoryDropDownEditor },
-      { field: "published", title: "Published", format: "{0:MMMM yyyy}", width: 80 },
-      { field: "author", title: "Author", width: 100 },
-      { field: "name", title: "Name", width: 150 },
-      { command: ["edit", "destroy"], title: "&nbsp;", width: 110 },
+      { field: "category",  title: "Category",  width: 100, editor: categoryDropDownEditor },
+      { field: "published", title: "Published", width: 80,  format: "{0:MMMM yyyy}" },
+      { field: "author",    title: "Author",    width: 100 },
+      { field: "name",      title: "Name",      width: 150 },
+      { command: ["edit", "destroy"], title: "Options", width: 110 },
     ],
   })
   $("#category_list").kendoDropDownList({
