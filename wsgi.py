@@ -38,7 +38,7 @@ sql_ops = {
 }
 sql_logops = ['and','or']
 
-book_list_columns = ['id', 'published', 'category', 'author', 'name']
+book_list_columns = ['id', 'category', 'published', 'author', 'name']
 
 def parseSQL(sqlc):
   exp_column = True
@@ -133,7 +133,7 @@ class list_categories(RequestHandler):
   def get(self):
     conn    = self.db
     cursor  = conn.cursor(cursor_factory=RealDictCursor)
-    cursor.execute('SELECT category FROM api.book_list LIMIT 20')
+    cursor.execute('SELECT c.name AS category FROM schemas.category c LIMIT 20')
     records = cursor.fetchall()
     self.write({
       'rows': records
@@ -146,11 +146,11 @@ class APINotes(RequestHandler):
 
   def get(self, rid=None):
     sort_map = {
-      'id'       :1,
-      'published':2,
-      'category' :3,
-      'author'   :4,
-      'name'     :5,
+      'id'        : 1,
+      'category'  : 2,
+      'published' : 3,
+      'author'    : 4,
+      'name'      : 5,
     }
     conn    = self.db
     cursor  = conn.cursor(cursor_factory=RealDictCursor)
@@ -217,10 +217,10 @@ class APINotes(RequestHandler):
     })
 
   def post(self, rid = None):
-    name      = self.get_argument('name', None)
-    author    = self.get_argument('author', None)
     category  = self.get_argument('category', None)
     published = self.get_argument('published', None)
+    author    = self.get_argument('author', None)
+    name      = self.get_argument('name', None)
 
     if isempty(name):
       #print 'post: warning: empty bookname'
@@ -240,16 +240,19 @@ class APINotes(RequestHandler):
     conn   = self.db
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM api.book_add(%s, %s, %s, %s)",
-                    (published, category, author, name))
+                    (category,
+                     published,
+                     author,
+                     name))
     conn.commit()
     conn.close()
 
   def put(self, rid=None):
-    name      = self.get_argument('name')
-    author    = self.get_argument('author')
+    rowid     = self.get_argument('id')
     category  = self.get_argument('category', None)
     published = self.get_argument('published', None)
-    rowid     = self.get_argument('id')
+    author    = self.get_argument('author', None)
+    name      = self.get_argument('name')
     conn      = self.db
     cursor    = conn.cursor()
 
@@ -273,8 +276,10 @@ class APINotes(RequestHandler):
 
     cursor.execute("SELECT * FROM api.book_update \
                     (%s, %s, %s, %s, %s)",
-                    (rowid,    published,
-                     category, author,
+                    (rowid,
+                     category,
+                     published,
+                     author,
                      name
                     ))
     conn.commit()

@@ -103,12 +103,7 @@ $(document).ready(function (){
             type: "number",
             editable: false,
           },
-          name: {
-            type: "string",
-            editable: true,
-            validation: { required: true }
-          },
-          author: {
+          category: {
             type: "string",
             editable: true,
             validation: { required: true }
@@ -118,7 +113,12 @@ $(document).ready(function (){
             editable: true,
             validation: { required: true }
           },
-          category: {
+          author: {
+            type: "string",
+            editable: true,
+            validation: { required: true }
+          },
+          name: {
             type: "string",
             editable: true,
             validation: { required: true }
@@ -142,10 +142,10 @@ $(document).ready(function (){
     ],
     columns: [
       { field: "id", title: "ID", width: 50 },
-      { field: "name", title: "Name", width: 150 },
-      { field: "author", title: "Author", width: 100 },
-      { field: "published", title: "Published", format: "{0:MMMM yyyy}", width: 80 },
       { field: "category", title: "Category", width: 100, editor: categoryDropDownEditor },
+      { field: "published", title: "Published", format: "{0:MMMM yyyy}", width: 80 },
+      { field: "author", title: "Author", width: 100 },
+      { field: "name", title: "Name", width: 150 },
       { command: ["edit", "destroy"], title: "&nbsp;", width: 110 },
     ],
   })
