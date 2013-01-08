@@ -1,16 +1,21 @@
 DROP   VIEW     IF EXISTS api.book_list;
-
 DROP   TABLE    IF EXISTS schemas.book          CASCADE;
 DROP   TABLE    IF EXISTS schemas.category      CASCADE;
-
 DROP   SEQUENCE IF EXISTS schemas.id_generator;
 DROP   SCHEMA   IF EXISTS schemas               CASCADE;
 
 CREATE SCHEMA             schemas;
 
+CREATE TABLE schemas.category (
+  category_id  BIGSERIAL PRIMARY KEY,
+  name         VARCHAR   NOT NULL,
+  UNIQUE(name),
+  CHECK (name <> '')
+);
+
 CREATE TABLE schemas.book (
-  id           BIGSERIAL NOT NULL PRIMARY KEY,
-  category_id  BIGINT    NOT NULL,
+  id           BIGSERIAL PRIMARY KEY,
+  category_id  BIGINT    NOT NULL REFERENCES schemas.category,
   published    DATE      NOT NULL,
   author       VARCHAR   NOT NULL,
   name         VARCHAR   NOT NULL,
@@ -21,14 +26,6 @@ CREATE TABLE schemas.book (
   CHECK (name <> '')
 );
 
-CREATE SEQUENCE schemas.id_generator;
-CREATE TABLE schemas.category (
-  category_id  BIGINT    NOT NULL PRIMARY KEY REFERENCES schemas.book ON DELETE CASCADE
-                                                                      ON UPDATE CASCADE,
-  name         VARCHAR   NOT NULL,
-  UNIQUE(name),
-  CHECK (name <> '')
-);
 
 DROP   SCHEMA   IF EXISTS api CASCADE;
 CREATE SCHEMA             api;
@@ -61,28 +58,26 @@ BEGIN
   schemas.category
   WHERE
   name = in_category;
+
   IF (NOT FOUND)
   THEN
-    SELECT nextval('schemas.id_generator') INTO in_category_id;
+    INSERT INTO schemas.category (name)
+    VALUES (in_category)
+    RETURNING
+    category_id
+    INTO
+    in_category_id;
+
     INSERT INTO schemas.book (
       category_id,
       published,
       author,
       name
-    )
-    VALUES (
+    ) VALUES (
       in_category_id,
       in_published,
       in_author,
       in_name
-    );
-    INSERT INTO schemas.category (
-      category_id,
-      name
-    )
-    VALUES (
-      in_category_id,
-      in_category
     );
   ELSE
     INSERT INTO schemas.book (
@@ -90,8 +85,7 @@ BEGIN
       published,
       author,
       name
-    )
-    VALUES (
+    ) VALUES (
       in_category_id,
       in_published,
       in_author,
@@ -137,33 +131,20 @@ BEGIN
     IF (in_category in (SELECT name FROM schemas.category))
     THEN
       tmp := (SELECT category_id FROM schemas.category WHERE name = in_category);
-      UPDATE schemas.book
-      SET
+      UPDATE schemas.book SET
       category_id = tmp
       WHERE    id = in_id;
     ELSE
-      SELECT COUNT(*) INTO tmp FROM schemas.book WHERE category_id = in_category_id;
-      IF (tmp < 2)
-      THEN
-        UPDATE schemas.category
-        SET
-        name        = in_category
-        WHERE
-        category_id = in_category_id;
-      ELSE
-        in_category_id := (SELECT nextval('schemas.id_generator'));
-        UPDATE schemas.book
-        SET
-        category_id = in_category_id
-        WHERE
-        id          = in_id;
+      INSERT INTO schemas.category (name)
+      VALUES (in_category)
+      RETURNING
+      category_id
+      INTO
+      in_category_id;
 
-        INSERT INTO schemas.category
-        VALUES (
-          in_category_id,
-          in_category
-        );
-      END IF;
+      UPDATE schemas.book SET
+      category_id = in_category_id
+      WHERE    id = in_id;
     END IF;
   END IF;
   -- update the rest
@@ -192,10 +173,23 @@ CREATE VIEW api.book_list AS
   ON
   c.category_id = b.category_id;
 
+CREATE OR REPLACE FUNCTION api.category_clean()
+RETURNS BIGINT
+AS $$
+DECLARE
+  rowcount BIGINT;
+  BEGIN
+    DELETE FROM schemas.category WHERE name NOT IN (SELECT category FROM api.book_list);
+    GET DIAGNOSTICS rowcount = ROW_COUNT;
+    RETURN rowcount;
+  END;
+$$ LANGUAGE plpgsql;
+
+
 GRANT SELECT        ON api.book_list                 TO pguser;
 GRANT USAGE         ON SCHEMA schemas                TO pguser;
 GRANT USAGE         ON SCHEMA api                    TO pguser;
 GRANT ALL           ON schemas.book                  TO pguser;
 GRANT ALL           ON schemas.category              TO pguser;
-GRANT USAGE, SELECT ON SEQUENCE schemas.id_generator TO pguser;
-GRANT USAGE, SELECT ON SEQUENCE schemas.book_id_seq  TO pguser;
+GRANT USAGE, SELECT ON SEQUENCE schemas.category_category_id_seq TO pguser;
+GRANT USAGE, SELECT ON SEQUENCE schemas.book_id_seq              TO pguser;

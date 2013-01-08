@@ -134,7 +134,7 @@ class list_categories(RequestHandler):
   def get(self):
     conn    = self.db
     cursor  = conn.cursor(cursor_factory=RealDictCursor)
-    cursor.execute('SELECT c.name AS category FROM schemas.category c LIMIT 20')
+    cursor.execute('SELECT category FROM api.book_list LIMIT 20')
     records = cursor.fetchall()
     self.write({
       'rows': records
