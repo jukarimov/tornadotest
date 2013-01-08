@@ -17,6 +17,7 @@ from psycopg2 import connect
 from psycopg2.extras import RealDictCursor
 
 from datetime import date
+from datetime import datetime
 import json, re
 
 def isempty(string):
@@ -25,16 +26,16 @@ def isempty(string):
   return False
 
 sql_ops = {
-    'eq'              :'=',
-    'neq'             :'!=',
-    'lt'              :'<',
-    'gt'              :'>',
-    'gte'              :'>=',
-    'lte'              :'<=',
-    'contains'        :'ilike',
-    'doesnotcontain'  :'not ilike',
-    'startswith'      :'ilike_sw',
-    'endswith'        :'ilike_ew',
+    'eq'              : '=',
+    'neq'             : '!=',
+    'lt'              : '<',
+    'gt'              : '>',
+    'gte'             : '>=',
+    'lte'             : '<=',
+    'contains'        : 'ilike',
+    'doesnotcontain'  : 'not ilike',
+    'startswith'      : 'ilike_sw',
+    'endswith'        : 'ilike_ew',
 }
 sql_logops = ['and','or']
 
@@ -171,11 +172,11 @@ class APINotes(RequestHandler):
       except:
         self.write('Bad query')
         print 'get: warning: Bad query', page, rows
-        return
+        raise HTTPError(500)
       if page > sys.maxint or rows > sys.maxint:
         self.write('Bad query')
         print 'get: warning: Bad query', page, rows
-        return
+        raise HTTPError(500)
       if order not in [ 'asc', 'desc' ]:
         order = 'asc'
       if isempty(sqlc):
@@ -192,7 +193,7 @@ class APINotes(RequestHandler):
         SQL = parseSQL(sqlc)
         if not SQL:
           print 'Error parsing SQL'
-          return
+          raise HTTPError(500)
         print SQL
         print '-'*20, "CUT HERE", '-'*20
         cursor.execute(SQL + \
@@ -208,7 +209,12 @@ class APINotes(RequestHandler):
     print '-'*20, "ROWS", '-'*20
     print 'GET:', records
     print '-'*20, "END ROWS", '-'*20
-    cursor.execute('SELECT COUNT(id) FROM schemas.book')
+    if isempty(sqlc):
+      cursor.execute('SELECT COUNT(*) FROM schemas.book')
+    else:
+      COUNT = re.sub('SELECT \* FROM api.book_list',
+                     'SELECT COUNT(*) FROM api.book_list', SQL)
+      cursor.execute(COUNT)
     total_rows = cursor.fetchall()[0]['count']
     cursor.close()
     self.write({
@@ -217,64 +223,70 @@ class APINotes(RequestHandler):
     })
 
   def post(self, rid = None):
-    category  = self.get_argument('category', None)
+    category  = self.get_argument('category',  None)
     published = self.get_argument('published', None)
-    author    = self.get_argument('author', None)
-    name      = self.get_argument('name', None)
+    author    = self.get_argument('author',    None)
+    name      = self.get_argument('name',      None)
 
     if isempty(name):
       print 'post: warning: empty bookname'
-      return
+      raise HTTPError(500)
     if isempty(author):
       print 'post: warning: empty author'
-      return
+      raise HTTPError(500)
     if isempty(category):
       print 'post: warning: empty category'
-      return
+      raise HTTPError(500)
     if isempty(published):
       print 'post: warning: empty published'
-      return
+      raise HTTPError(500)
 
-    print 'POST:', category, published, author, name
+    print 'POST:', datetime.now(), category, published, author, name
 
     conn   = self.db
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM api.book_add(%s, %s, %s, %s)",
-                                              (category,
-                                               published,
-                                               author,
-                                               name))
+    try:
+      cursor.execute("SELECT * FROM api.book_add(%s, %s, %s, %s)",
+                                                (category,
+                                                 published,
+                                                 author,
+                                                 name))
+    except:
+      print '!!!DATABASE ERROR!!! ROLLBACKED'
+      conn.rollback()
+      raise HTTPError(500)
     conn.commit()
     conn.close()
 
   def put(self, rid=None):
-    rowid     = self.get_argument('id')
-    category  = self.get_argument('category', None)
+    rowid     = self.get_argument('id',        None)
+    category  = self.get_argument('category',  None)
     published = self.get_argument('published', None)
-    author    = self.get_argument('author', None)
-    name      = self.get_argument('name')
+    author    = self.get_argument('author',    None)
+    name      = self.get_argument('name',      None)
     conn      = self.db
     cursor    = conn.cursor()
 
-    print 'PUT:', rowid, category, published, author, name
+    print 'PUT:', datetime.now(), rowid, category, published, author, name
 
     if isempty(rowid):
       print 'put: warning: empty rowid'
-      return
+      raise HTTPError(500)
     if isempty(name):
       print 'put: warning: empty bookname'
-      return
+      raise HTTPError(500)
     if isempty(author):
       print 'put: warning: empty author'
-      return
+      raise HTTPError(500)
     if isempty(category):
       print 'put: warning: empty category'
-      return
+      raise HTTPError(500)
     if isempty(published):
       print 'put: warning: empty published'
-      return
+      raise HTTPError(500)
 
-    cursor.execute("SELECT * FROM api.book_update \
+    try:
+      cursor.execute("SELECT * FROM api.book_update \
                     (%s, %s, %s, %s, %s)",
                     (rowid,
                      category,
@@ -282,6 +294,10 @@ class APINotes(RequestHandler):
                      author,
                      name
                     ))
+    except:
+      print '!!!DATABASE ERROR!!! ROLLBACKED'
+      conn.rollback()
+      raise HTTPError(500)
     conn.commit()
     conn.close()
 
@@ -289,11 +305,17 @@ class APINotes(RequestHandler):
 
     if isempty(rid):
       print 'delete: warning: empty id'
-      return
+      raise HTTPError(500)
 
     conn   = self.db
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM schemas.book WHERE id = %s", (rid,))
+    try:
+      cursor.execute("DELETE FROM schemas.book WHERE id = %s", (rid,))
+    except:
+      print '!!!DATABASE ERROR!!! ROLLBACKED'
+      conn.rollback()
+      raise HTTPError(500)
+
     conn.commit()
     conn.close()
 

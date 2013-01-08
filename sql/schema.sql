@@ -24,7 +24,7 @@ CREATE TABLE schemas.book (
 CREATE SEQUENCE schemas.id_generator;
 CREATE TABLE schemas.category (
   category_id  BIGINT    NOT NULL PRIMARY KEY REFERENCES schemas.book ON DELETE CASCADE
-                                                                      ON UPDATE RESTRICT,
+                                                                      ON UPDATE CASCADE,
   name         VARCHAR   NOT NULL,
   UNIQUE(name),
   CHECK (name <> '')

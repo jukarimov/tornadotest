@@ -95,6 +95,10 @@ $(function(){
     });
   });
   $('#btn_save').click(function(){
+    // update icon
+    lb = $('#btn_upd').linkbutton();
+    lb.data().linkbutton.options.iconCls = 'icon-ok';
+    $('#btn_upd').linkbutton();
     var add_records = tbl.datagrid('getChanges', 'inserted');
     var upd_records = tbl.datagrid('getChanges', 'updated');
     var del_records = tbl.datagrid('getChanges', 'deleted');
@@ -141,7 +145,7 @@ $(function(){
 });
 function popup(text, err) {
   if (err) {
-    $.messager.alert('Error!','Data transport failed!','error');
+    $.messager.alert('Error!','Data transport error!','error');
   } else {
     $.messager.show({
       title:    'Success',
