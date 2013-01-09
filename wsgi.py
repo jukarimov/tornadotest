@@ -267,6 +267,10 @@ class APINotes(RequestHandler):
       conn.rollback()
       raise HTTPError(500)
     conn.commit()
+    outid = cursor.fetchall()[0][0]
+    self.write({
+      'book_id': outid
+    })
     conn.close()
 
   def put(self, rid=None):

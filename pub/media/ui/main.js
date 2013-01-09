@@ -53,14 +53,12 @@ $(function(){
     var row = tbl.datagrid('getSelected');
     if (row) {
       var this_index = tbl.datagrid('getRowIndex', row);
-      console.log(this_index)
       if (this_index >= 0) {
         if (lastEdit || lastAdd) {
           tbl.datagrid('endEdit', this_index);
           lastEdit = 0;
           lastAdd = 0;
           update_icon_swap('edit');
-          console.log('edit')
         } else {
           lastIndex = tbl.datagrid('getRowIndex', row);
           if (lastIndex < 0)
@@ -68,7 +66,6 @@ $(function(){
           tbl.datagrid('beginEdit', lastIndex);
           lastEdit = 1;
           update_icon_swap('done');
-          console.log('done')
         }
       }
     }
@@ -108,6 +105,13 @@ $(function(){
           'author'     : row.author,
           'published'  : row.published,
           'category'   : row.category,
+        },
+        success: function(response) {
+          bid = response.book_id;
+          grd = tbl.datagrid('getRows');
+          idx = tbl.datagrid('getRowIndex', row);
+          grd[idx].id = bid;
+          tbl.datagrid('updateRow',{ index: idx, row: {} });
         },
         error: function(response) {
           popup('err', true)

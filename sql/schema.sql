@@ -35,9 +35,10 @@ CREATE OR REPLACE FUNCTION api.book_add(
   in_published DATE,
   in_author    VARCHAR,
   in_name      VARCHAR
-) RETURNS VOID AS $$
+) RETURNS BIGINT AS $$
 DECLARE
 in_category_id BIGINT;
+out_book_id    BIGINT;
 BEGIN
 
   IF (
@@ -48,7 +49,7 @@ BEGIN
       author      = in_author    AND
       name        = in_name
     )
-  ) THEN RETURN;
+  ) THEN RETURN 0;
   END IF;
 
   SELECT category_id
@@ -78,7 +79,7 @@ BEGIN
       in_published,
       in_author,
       in_name
-    );
+    ) RETURNING id INTO out_book_id;
   ELSE
     INSERT INTO schemas.book (
       category_id,
@@ -90,8 +91,9 @@ BEGIN
       in_published,
       in_author,
       in_name
-    );
+    ) RETURNING id INTO out_book_id;
   END IF;
+  RETURN out_book_id;
 END;
 $$
 LANGUAGE plpgsql;
