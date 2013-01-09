@@ -1,6 +1,7 @@
 $(function(){
   var lastIndex;
   var lastEdit = 0;
+  var lastAdd = 0;
   var tbl = $('#tt');
   tbl.datagrid({
     url: '/api/notes/',
@@ -21,11 +22,8 @@ $(function(){
     fitColumns:true,
     onBeforeLoad: function() { $(this).datagrid('rejectChanges'); },
     onDblClickRow: function(rowIndex){
-      // update icon
-      lb = $('#btn_upd').linkbutton();
-      lb.data().linkbutton.options.iconCls = 'icon-edit';
-      $('#btn_upd').linkbutton();
-      if (lastIndex != rowIndex){
+      update_icon_swap('done');
+      if (lastIndex != rowIndex) {
         $('#tt').datagrid('endEdit', lastIndex);
         $('#tt').datagrid('beginEdit', rowIndex);
       }
@@ -34,45 +32,45 @@ $(function(){
   });
   $('#btn_add').click(function(){
     tbl.datagrid('endEdit', lastIndex);
+    update_icon_swap('edit');
     tbl.datagrid('appendRow',{
       name        : 'book title',
       author      : 'book\'s author',
-      published   : '12-13-2000',
+      published   : 'Jan 1 2001',
       category    : 'book category',
     });
     lastIndex = tbl.datagrid('getRows').length - 1;
+    if (lastIndex < 0)
+      lastIndex = 0;
     tbl.datagrid('selectRow', lastIndex);
     tbl.datagrid('beginEdit', lastIndex);
-    // update icon
-    lb = $('#btn_upd').linkbutton();
-    lb.data().linkbutton.options.iconCls = 'icon-edit';
-    $('#btn_upd').linkbutton();
+    update_icon_swap('done');
+    lastAdd = 1;
   });
   $('#btn_upd').click(function(){
     tbl.datagrid('endEdit', lastIndex);
-    // update icon
-    lb = $('#btn_upd').linkbutton();
-    lb.data().linkbutton.options.iconCls = 'icon-edit';
-    $('#btn_upd').linkbutton();
+    update_icon_swap('edit');
     var row = tbl.datagrid('getSelected');
     if (row) {
       var this_index = tbl.datagrid('getRowIndex', row);
-      if (this_index == lastIndex && !lastEdit) {
-        tbl.datagrid('endEdit', this_index);
-        lastEdit = 1;
-        // update icon
-        lb = $('#btn_upd').linkbutton();
-        lb.data().linkbutton.options.iconCls = 'icon-ok';
-        $('#btn_upd').linkbutton();
-        return;
+      console.log(this_index)
+      if (this_index >= 0) {
+        if (lastEdit || lastAdd) {
+          tbl.datagrid('endEdit', this_index);
+          lastEdit = 0;
+          lastAdd = 0;
+          update_icon_swap('edit');
+          console.log('edit')
+        } else {
+          lastIndex = tbl.datagrid('getRowIndex', row);
+          if (lastIndex < 0)
+            lastIndex = 0;
+          tbl.datagrid('beginEdit', lastIndex);
+          lastEdit = 1;
+          update_icon_swap('done');
+          console.log('done')
+        }
       }
-      lastIndex = tbl.datagrid('getRowIndex', row);
-      tbl.datagrid('beginEdit', lastIndex);
-      lastEdit = 0;
-      // update icon
-      lb = $('#btn_upd').linkbutton();
-      lb.data().linkbutton.options.iconCls = 'icon-edit';
-      $('#btn_upd').linkbutton();
     }
   });
   $('#btn_del').click(function(){
@@ -83,6 +81,7 @@ $(function(){
         if (r) {
           var n = tbl.datagrid('getRowIndex', row);
           tbl.datagrid('deleteRow', n);
+          update_icon_swap('edit');
         }
       });
     }
@@ -91,14 +90,12 @@ $(function(){
     $.messager.confirm('Confirm','Are you sure you want to discard changes?', function(r){
       if (r) {
         tbl.datagrid('rejectChanges');
+        update_icon_swap('edit');
       }
     });
   });
   $('#btn_save').click(function(){
-    // update icon
-    lb = $('#btn_upd').linkbutton();
-    lb.data().linkbutton.options.iconCls = 'icon-ok';
-    $('#btn_upd').linkbutton();
+    update_icon_swap('edit');
     var add_records = tbl.datagrid('getChanges', 'inserted');
     var upd_records = tbl.datagrid('getChanges', 'updated');
     var del_records = tbl.datagrid('getChanges', 'deleted');
@@ -107,13 +104,10 @@ $(function(){
       $.ajax('/api/notes/', {
         'type':'POST',
         'data': {
-          'name'       :row.name,
-          'author'     :row.author,
-          'published'  :row.published,
-          'category'   :row.category,
-        },
-        success: function(response) {
-          popup('Saved', 0);
+          'name'       : row.name,
+          'author'     : row.author,
+          'published'  : row.published,
+          'category'   : row.category,
         },
         error: function(response) {
           popup('err', true)
@@ -124,14 +118,11 @@ $(function(){
       $.ajax('/api/notes/', {
         'type':'PUT',
         'data': {
-          'id'         :row.id,
-          'name'       :row.name,
-          'author'     :row.author,
-          'published'  :row.published,
-          'category'   :row.category
-        },
-        success: function(response) {
-          popup('Updated', 0);
+          'id'         : row.id,
+          'name'       : row.name,
+          'author'     : row.author,
+          'published'  : row.published,
+          'category'   : row.category
         },
         error: function(response) {
           popup('err', true)
@@ -154,6 +145,22 @@ function popup(text, err) {
       showType: 'slide'
     });
   }
+}
+function update_icon_swap(e) {
+  lb = $('#btn_upd').linkbutton();
+  if (!e) {
+    if (lb.data().linkbutton.options.iconCls == 'icon-ok')
+      lb.data().linkbutton.options.iconCls = 'icon-edit';
+    else
+      lb.data().linkbutton.options.iconCls = 'icon-ok';
+  }
+  else if (e == 'edit'){
+    lb.data().linkbutton.options.iconCls = 'icon-edit';
+  }
+  else if (e == 'done'){
+    lb.data().linkbutton.options.iconCls = 'icon-ok';
+  }
+  $('#btn_upd').linkbutton();
 }
 $(window).resize(function(){
   var height = $(window).height();

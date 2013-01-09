@@ -68,7 +68,7 @@ $(document).ready(function (){
               }
               f = filters[i]
               if (!f.value || !f.field || !f.operator) {
-                alert('Bad filter value:' + map.sqlc)
+                //alert('Bad filter value:' + map.sqlc)
                 map.sqlc = [];
                 return map;
               }
@@ -150,6 +150,7 @@ $(document).ready(function (){
     ],
   })
   $("#category_list").kendoDropDownList({
+    optionLabel: "Select from categories",
     dataTextField: "category",
     dataValueField: "category",
     dataSource: {
@@ -169,9 +170,15 @@ $(document).ready(function (){
     change: function() {
       val = $("#category_list").val();
       var grid = $("#grid").data().kendoGrid;
-      grid.dataSource.filter({
-        "filters":[{"field":"category","operator":"eq","value":val}]
-      })
+      if (val != 'Select from categories') {
+        grid.dataSource.filter({
+          "filters":[{"field":"category","operator":"eq","value":val}]
+        })
+      } else {
+        grid.dataSource.filter({
+          "filters":[{"field":"category","operator":"eq","value":null}]
+        })
+      }
     },
     open: function() {
       $("#category_list").data("kendoDropDownList").dataSource.read()
@@ -182,7 +189,7 @@ $(document).ready(function (){
       .appendTo(contrainer)
       .kendoComboBox({
         index: 0,
-        placeholder: "Select category",
+        placeholder: "Select from categories",
         dataTextField: "category",
         dataValueField: "category",
         dataSource: {

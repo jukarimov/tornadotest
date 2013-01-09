@@ -25,6 +25,17 @@ def isempty(string):
     return True
   return False
 
+def parseCONF():
+  confile = file('postgres.cfg')
+  connstr = ''
+  for line in confile.read().split():
+    key, val = line.split('=')
+    if key not in ['user', 'host', 'dbname', 'password']:
+      print 'Config parse error, check postgres.cfg'
+      exit(1)
+    connstr += key + "=" + "'" + val  + "' "
+  return connstr
+
 sql_ops = {
     'eq'              : '=',
     'neq'             : '!=',
@@ -130,7 +141,7 @@ class Main(RequestHandler):
 class list_categories(RequestHandler):
   @property
   def db(self):
-    return connect("user='pguser' host='localhost' dbname='pgdb' password='pgpass'")
+    return connect(parseCONF())
   def get(self):
     conn    = self.db
     cursor  = conn.cursor(cursor_factory=RealDictCursor)
@@ -143,7 +154,7 @@ class list_categories(RequestHandler):
 class APINotes(RequestHandler):
   @property
   def db(self):
-    return connect("user='pguser' host='localhost' dbname='pgdb' password='pgpass'")
+    return connect(parseCONF())
 
   def get(self, rid=None):
     sort_map = {
@@ -305,6 +316,15 @@ class APINotes(RequestHandler):
 
     if isempty(rid):
       print 'delete: warning: empty id'
+      raise HTTPError(500)
+
+    try:
+      t = int(rid)
+      if t < 0 or t > sys.maxint:
+        print 'DELETE: Bad rid'
+        raise HTTPError(500)
+    except:
+      print 'DELETE: Bad rid'
       raise HTTPError(500)
 
     conn   = self.db
