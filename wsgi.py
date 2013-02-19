@@ -256,6 +256,13 @@ class APINotes(RequestHandler):
 
     conn   = self.db
     cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM api.book_add(%s, %s, %s, %s)",
+                                                (category,
+                                                 published,
+                                                 author,
+                                                 name))
+    ''''
     try:
       cursor.execute("SELECT * FROM api.book_add(%s, %s, %s, %s)",
                                                 (category,
@@ -266,6 +273,7 @@ class APINotes(RequestHandler):
       print '!!!DATABASE ERROR!!! ROLLBACKED'
       conn.rollback()
       raise HTTPError(500)
+      '''
     conn.commit()
     outid = cursor.fetchall()[0][0]
     self.write({
@@ -300,6 +308,15 @@ class APINotes(RequestHandler):
       print 'put: warning: empty published'
       raise HTTPError(500)
 
+    cursor.execute("SELECT * FROM api.book_update \
+                    (%s, %s, %s, %s, %s)",
+                    (rowid,
+                     category,
+                     published,
+                     author,
+                     name
+                    ))
+    '''
     try:
       cursor.execute("SELECT * FROM api.book_update \
                     (%s, %s, %s, %s, %s)",
@@ -313,6 +330,7 @@ class APINotes(RequestHandler):
       print '!!!DATABASE ERROR!!! ROLLBACKED'
       conn.rollback()
       raise HTTPError(500)
+    '''
     conn.commit()
     conn.close()
 
